@@ -1,0 +1,23 @@
+{
+	"Add Terraform Azure Config": {
+		"scope": "terraform",
+		"prefix": "tf_az_config",
+		"body": [
+			"terraform {",
+			"\trequired_providers {",
+			"\t\tazurerm = {",
+			"\t\t\tsource  = \"hashicorp/azurerm\"",
+			"\t\t\tversion = \"~> 2.65\"",
+			"\t\t}",
+			"\t}",
+			"}",
+			"",
+			"provider \"azurerm\" {",
+			"\tfeatures {}",
+			"}",
+			"",
+			"$1"
+		],
+		"description": "Add Terraform Azure Config"
+	}
+}

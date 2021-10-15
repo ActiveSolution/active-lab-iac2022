@@ -1,0 +1,237 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.4.613.9944",
+      "templateHash": "1326905708525862224"
+    }
+  },
+  "parameters": {
+    "appServicePlanSku": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    }
+  },
+  "functions": [],
+  "variables": {
+    "webAppName": "[format('webapp{0}', uniqueString(resourceGroup().id))]",
+    "keyVaultName": "[format('keyvault{0}', uniqueString(resourceGroup().id))]",
+    "sqlServerName": "[format('sqlserver{0}', uniqueString(resourceGroup().id))]",
+    "sqlDbName": "infradb",
+    "sqlAdministratorLogin": "infraadmin",
+    "sqlAdministratorPassword": "[format('P{0}x!', uniqueString(resourceGroup().id, '224F5A8B-51DB-46A3-A7C8-59B0DD584A41'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2021-02-01-preview",
+      "name": "[format('{0}/{1}', variables('sqlServerName'), variables('sqlDbName'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "edition": "Basic"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers/administrators",
+      "apiVersion": "2021-02-01-preview",
+      "name": "[format('{0}/{1}', variables('sqlServerName'), 'ActiveDirectory')]",
+      "properties": {
+        "administratorType": "ActiveDirectory",
+        "login": "[variables('webAppName')]",
+        "sid": "[reference(resourceId('Microsoft.Web/sites', variables('webAppName')), '2021-01-15', 'full').identity.principalId]",
+        "tenantId": "[reference(resourceId('Microsoft.Web/sites', variables('webAppName')), '2021-01-15', 'full').identity.tenantId]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('webAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers/firewallRules",
+      "apiVersion": "2020-11-01-preview",
+      "name": "[format('{0}/{1}', variables('sqlServerName'), 'AllowAllWindowsAzureIps')]",
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "0.0.0.0"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2021-06-01-preview",
+      "name": "[format('{0}/{1}', variables('keyVaultName'), 'testSecret')]",
+      "properties": {
+        "value": "hello from bicep"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2021-06-01",
+      "name": "logAnalytics",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "appInsights",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "tags": {
+        "[format('hidden-link:{0}', resourceId('Microsoft.Web/sites', variables('webAppName')))]": "Resource"
+      },
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', 'logAnalytics')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'logAnalytics')]",
+        "[resourceId('Microsoft.Web/sites', variables('webAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2021-01-15",
+      "name": "[format('{0}/web', variables('webAppName'))]",
+      "properties": {
+        "appSettings": [
+          {
+            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+            "value": "[reference(resourceId('Microsoft.Insights/components', 'appInsights')).InstrumentationKey]"
+          },
+          {
+            "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+            "value": "~2"
+          },
+          {
+            "name": "XDT_MicrosoftApplicationInsights_Mode",
+            "value": "recommended"
+          },
+          {
+            "name": "keyVaultName",
+            "value": "[variables('keyVaultName')]"
+          },
+          {
+            "name": "DOCKER_REGISTRY_SERVER_URL",
+            "value": "https://iacworkshop.azurecr.io"
+          },
+          {
+            "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+            "value": "iacworkshop"
+          },
+          {
+            "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+            "value": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', 'appInsights')]",
+        "[resourceId('Microsoft.Web/sites', variables('webAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2021-02-01-preview",
+      "name": "[variables('sqlServerName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "administratorLogin": "[variables('sqlAdministratorLogin')]",
+        "administratorLoginPassword": "[variables('sqlAdministratorPassword')]"
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2021-06-01-preview",
+      "name": "[variables('keyVaultName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "tenantId": "[subscription().tenantId]",
+        "accessPolicies": [
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('webAppName')), '2021-01-15', 'full').identity.principalId]",
+            "permissions": {
+              "secrets": [
+                "list",
+                "get"
+              ]
+            }
+          }
+        ],
+        "sku": {
+          "name": "standard",
+          "family": "A"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('webAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2021-01-15",
+      "name": "appServicePlan",
+      "kind": "linux",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('appServicePlanSku')]",
+        "capacity": 1
+      },
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2021-01-15",
+      "name": "[variables('webAppName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "tags": {
+        "[format('hidden-related:{0}/providers/Microsoft.Web/serverfarms/appServicePlan', resourceGroup().id)]": "Resource"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', 'appServicePlan')]",
+        "siteConfig": {
+          "linuxFxVersion": "DOCKER|iacworkshop.azurecr.io/infrawebapp:v1",
+          "connectionStrings": [
+            {
+              "name": "infradb",
+              "connectionString": "[format('Data Source=tcp:{0},1433;Initial Catalog={1};Authentication=Active Directory Interactive;', reference(resourceId('Microsoft.Sql/servers', variables('sqlServerName'))).fullyQualifiedDomainName, variables('sqlDbName'))]",
+              "type": "SQLAzure"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', 'appServicePlan')]",
+        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "websiteAddress": {
+      "type": "string",
+      "value": "[format('https://{0}/', reference(resourceId('Microsoft.Web/sites', variables('webAppName'))).defaultHostName)]"
+    }
+  }
+}
