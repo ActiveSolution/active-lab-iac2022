@@ -2,14 +2,12 @@ import * as pulumi from "@pulumi/pulumi";
 import * as azure from "@pulumi/azure-native";
 import * as random from "@pulumi/random";
 import * as az from "@pulumi/azure";
-import { WebAppWithApplicationInsights } from "./web-app"
 
 function getName(resourceType: string) {
     return `${pulumi.getProject().toLowerCase()}-${resourceType}-`
 }
 
 const config = new pulumi.Config();
-
 const clientConfig = pulumi.output(azure.authorization.getClientConfig());
 
 const resourceGroup = new azure.resources.ResourceGroup("PulumiLab", {
@@ -27,27 +25,24 @@ const appSvcPlan = new azure.web.AppServicePlan(getName("plan"), {
     }
 }, {
     parent: resourceGroup
-});
-
+})
 
 const isFreeTier = config.require("appServicePlanTier").toLowerCase() == "free";
 
-const laws = new azure.operationalinsights.Workspace(getName("laws"), {
+const app = new azure.web.WebApp(getName("web"), {
     resourceGroupName: resourceGroup.name,
-}, {
-    parent: resourceGroup
-}); 
-
-const app = new WebAppWithApplicationInsights(getName("web-app"), {
-    webName: getName("web"),
-    resourceGroupName: resourceGroup.name,
-    appServicePlanId: appSvcPlan.id,
-    isFreeTier: isFreeTier,
-    aiName: getName("ai"),
-    workspaceId: laws.id
+    serverFarmId: appSvcPlan.id,
+    siteConfig: {
+        linuxFxVersion: "DOCKER|iacworkshop.azurecr.io/infrawebapp:v1",
+        alwaysOn: !isFreeTier,
+        use32BitWorkerProcess: isFreeTier
+    },
+    identity: {
+        type: azure.types.enums.web.ManagedServiceIdentityType.SystemAssigned
+    }
 }, {
     parent: appSvcPlan
-})
+});
 
 const kv = new azure.keyvault.Vault(getName("kv"), {
     resourceGroupName: resourceGroup.name,
@@ -85,20 +80,19 @@ const kv = new azure.keyvault.Vault(getName("kv"), {
 }, {
     parent: resourceGroup
 })
-app.addAppSetting("KeyVaultName", kv.name);
 
 new azure.keyvault.Secret("testSecret", {
     resourceGroupName: resourceGroup.name,
     vaultName: kv.name,
     secretName: "testSecret",
     properties: {
-        value: "secretValue"
-    }
+        value: "secretValue",
+    },
 }, {
     parent: kv
 });
 
-const password = new random.RandomPassword("password", {
+const password = new random.RandomPassword("sqlAdminPassword", {
     length: 16,
     special: true
 });
@@ -114,9 +108,6 @@ const sqlServer = new azure.sql.Server(getName("sql"), {
 }, {
     parent: resourceGroup
 });
-app.addConnectionString("infradb", 
-                        azure.types.enums.web.ConnectionStringType.SQLAzure, 
-                        pulumi.interpolate `Data Source=tcp:${sqlServer.name}.database.windows.net,1433;Initial Catalog=infradb;Authentication=Active Directory Interactive;`);
 
 const db = new azure.sql.Database(getName("db"), {
     databaseName: "infradb",
@@ -129,7 +120,51 @@ const db = new azure.sql.Database(getName("db"), {
     maxSizeBytes: 1 * 1024 * 1024 * 1024
 }, {
     parent: sqlServer
-})
+});
+
+const laws = new azure.operationalinsights.Workspace(getName("laws"), {
+    resourceGroupName: resourceGroup.name,
+}, {
+    parent: resourceGroup
+});
+
+const ai = new az.appinsights.Insights(getName("ai"), {
+    resourceGroupName: resourceGroup.name,
+    workspaceId: laws.id,
+    applicationType: "web"
+}, {
+    parent: app
+});
+
+new azure.web.WebAppApplicationSettings("AppSettings", {
+    name: app.name,
+    resourceGroupName: app.resourceGroup,
+    properties: {
+        "DOCKER_REGISTRY_SERVER_URL": "https://iacworkshop.azurecr.io",
+        "DOCKER_REGISTRY_SERVER_USERNAME": "iacworkshop",
+        "DOCKER_REGISTRY_SERVER_PASSWORD": "XXX",
+        "KeyVaultName": kv.name,
+        "APPINSIGHTS_INSTRUMENTATIONKEY": ai.instrumentationKey,
+        "APPLICATIONINSIGHTS_CONNECTION_STRING": ai.connectionString,
+        "ApplicationInsightsAgent_EXTENSION_VERSION": "~3",
+        "XDT_MicrosoftApplicationInsights_Mode": "recommended"
+    }
+}, {
+    parent: app
+});
+
+new azure.web.WebAppConnectionStrings("ConnectionStrings", {
+    name: app.name,
+    resourceGroupName: app.resourceGroup,
+    properties: {
+        "infradb": {
+            type: azure.types.enums.web.ConnectionStringType.SQLAzure,
+            value: pulumi.interpolate `Data Source=tcp:${sqlServer.name}.database.windows.net,1433;Initial Catalog=infradb;Authentication=Active Directory Interactive;`
+        }
+    }
+}, {
+    parent: app
+});
 
 new azure.sql.FirewallRule("AllowAllWindowsAzureIps", {
     firewallRuleName: "AllowAllWindowsAzureIps",

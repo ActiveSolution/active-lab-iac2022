@@ -1,0 +1,5 @@
+encryptionsalt: v1:+bW1u3tj0A8=:v1:WpWiLGSziQr34LQa:BCUG2KYduPbrFrnJGTjxXSjq3gcQ2A==
+config:
+  PulumiLab:appServicePlanSize: F1
+  PulumiLab:appServicePlanTier: Free
+  azure-native:location: westeurope
