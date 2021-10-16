@@ -108,7 +108,13 @@ __Note:__ To get a list of all the regions you can run
 
 This will create a brand new Pulumi project called __PulumiLab__, configured to use TypeScript and Node, and be set up to create resources in Azure. It will also run `npm install` to install the dependencies needed, so that when the command finishes, you are good to go.
 
-In the end, you should have a folder that looks like this
+Once the `npm install` has completed, you can open the project in VS Code by running
+
+```bash
+> code .
+```
+
+You should end up with a file explorer, that looks like this
 
 ![image](./images/pulumi-folder.png)
 
@@ -360,11 +366,11 @@ The program is now at a point where you can try using
 > pulumi up
 ```
 
-This command will output a definition of what resources it will create, and ask you whether or not to proceed and if password was set then it will ask you for the password.
+This command will output a definition of what resources it will create, and ask you whether or not to proceed, and if a passphrase was set, it will ask you for that.
 
 __Note:__ An interactive prompt like this is not a great solution for a non-interactive scenario like for example a deployment pipeline. In this scenarios, you can append `-y` to automatically approve the changes.
 
-And if you set a password then you could set PULUMI_CONFIG_PASSPHRASE in your environment. You might do this locally as part of your local development loop (so you don't have to type your passphrase over and over) or in your dev/prod enviroment (where you would be unable to type your passphrase in interactively). There will be more about this further down in this lab.
+If you set a passphrase, which is definitely recommended, then you should set PULUMI_CONFIG_PASSPHRASE in your environment. You might do this locally as part of your local development loop, or in your dev/prod environment (where you would be unable to type your passphrase in interactively). There will be more about this later in this lab.
 
 The output should look something like this
 
@@ -539,7 +545,7 @@ const isFreeTier = config.require("appServicePlanTier").toLowerCase() == "free";
 const app = new azure.web.WebApp(getName("web"), {
     ...
     siteConfig: {
-        ...
+        ...,
         alwaysOn: !isFreeTier,
         use32BitWorkerProcess: isFreeTier
     },
@@ -788,7 +794,7 @@ new azure.web.WebAppApplicationSettings("AppSettings", {
     properties: {
         "DOCKER_REGISTRY_SERVER_URL": "https://iacworkshop.azurecr.io",
         "DOCKER_REGISTRY_SERVER_USERNAME": "iacworkshop",
-        "DOCKER_REGISTRY_SERVER_PASSWORD": "XXX",
+        "DOCKER_REGISTRY_SERVER_PASSWORD": "XXX"
     }
 }, {
     parent: app
@@ -867,7 +873,7 @@ const sqlServer = new azure.sql.Server(getName("sql"), {
     resourceGroupName: resourceGroup.name,
     administratorLogin: "infraadmin",
     administratorLoginPassword: password.result
-})
+});
 ```
 
 And don't forget to explicitly set the parent/child hierarchy
@@ -877,7 +883,7 @@ const sqlServer = new azure.sql.Server(getName("sql"), {
     ...
 }, {
     parent: resourceGroup
-})
+});
 ```
 
 __Note:__ If you are interested in what else you can configure on the SQL Server, have a look at: https://www.pulumi.com/docs/reference/pkg/azure-native/sql/server/
@@ -905,7 +911,7 @@ const db = new azure.sql.Database(getName("db"), {
     maxSizeBytes: 1 * 1024 * 1024 * 1024
 }, {
     parent: sqlServer
-})
+});
 ```
 
 Now you have the web app and the database defined, but you still need to make sure that the web app can talk to the database. This requires three things, a connection string for the web app to use, the necessary permissions for the the web app's assigned identity to access the database, and that the firewall to the SQL Server is opened to allow traffic to access it. Let's start with the connection string. 
