@@ -21,6 +21,6 @@ The lab will setup the following type of resources:
 
 Here are the links to each lab:
 
-* [Bicep lab](./iac-workshop/blob/master/labs/bicep.md)
-* [Terraform lab](./iac-workshop/blob/master/labs/terraform.md)
-* [Pulumi lab](./iac-workshop/blob/master/labs/pulumi.md)
+* [Bicep lab](https://github.com/ActiveSolution/iac-workshop/blob/master/labs/bicep.md)
+* [Terraform lab](https://github.com/ActiveSolution/iac-workshop/blob/master/labs/terraform.md)
+* [Pulumi lab](https://github.com/ActiveSolution/iac-workshop/blob/master/labs/pulumi.md)
