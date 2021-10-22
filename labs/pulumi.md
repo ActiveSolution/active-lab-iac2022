@@ -1449,7 +1449,7 @@ complaining that __app__ doesn't contain an `identity` property, which is very t
 
 ```typescript
 export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
-    public identity: pulumi.Output<azure.types.output.web.ManagedServiceIdentityResponse>;
+    public identity: pulumi.Output<azure.types.output.web.ManagedServiceIdentityResponse | undefined>;
 
     constructor(name: string, props: WebAppWithApplicationInsightsProps, opts?: pulumi.ComponentResourceOptions) {
         super("PulumiLab:class:WebAppWithApplicationInsights", name, {}, opts)

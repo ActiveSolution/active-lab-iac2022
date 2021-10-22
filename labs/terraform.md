@@ -1065,12 +1065,14 @@ module "web" {
   app_service_plan_tier = var.app_service_plan_tier
   key_vault_name = "${local.project_name}-kv-${local.suffix}"
   sql_server_domain_name = "${local.project_name}-sql-${local.suffix}"
-  db_name = azurerm_mssql_database.db.name
+  db_name = "infradb"
   log_analytics_workspace_id = azurerm_log_analytics_workspace.laws.id
 }
 ```
 
 __Note:__ Once again you cannot use a reference to the SQL Server or KeyVault, as it would cause a cyclic dependencies. Instead, you will have to concatenate the values "manually".
+
+__Comment:__ In this case, it might be a better idea to use a couple of `locals` for the names, instead of hard coding them and having duplicate code. However, for simplicity, this lab uses duplicated strings.
 
 There are still 3 outstanding issues that you need to fix though. The first two are related to the fact that the web app resource is now in the module, causing issues when setting the SQL Server AD Admin account, and when KeyVault access policy for the web app identity. To solve this, you need to add an output from the module for the web app's identity, and one for the web apps name in the web-app/main.tf file. Like this
 
