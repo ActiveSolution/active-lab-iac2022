@@ -127,7 +127,7 @@ module "web" {
   app_service_plan_tier = var.app_service_plan_tier
   key_vault_name = "${local.project_name}-kv-${local.suffix}"
   sql_server_domain_name = "${local.project_name}-sql-${local.suffix}"
-  db_name = azurerm_mssql_database.db.name
+  db_name = "infradb"
   log_analytics_workspace_id = azurerm_log_analytics_workspace.laws.id
 }
 

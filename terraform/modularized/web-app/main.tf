@@ -28,7 +28,7 @@ resource "azurerm_app_service" "app" {
   connection_string {
     name  = "infradb"
     type  = "SQLAzure"
-    value = "Data Source=tcp:${var.sql_server_domain_name}.database.windows.net,1433;Initial Catalog={var.db_name};Authentication=Active Directory Interactive;"
+    value = "Data Source=tcp:${var.sql_server_domain_name}.database.windows.net,1433;Initial Catalog=${var.db_name};Authentication=Active Directory Interactive;"
   }
 }
 
