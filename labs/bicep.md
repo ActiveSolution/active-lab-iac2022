@@ -37,6 +37,8 @@ Make the following changes to the resource:
 
 * Name the app service plan 'appServicePlan'
 
+* Change location to 'resourceGroup().location'
+
 * Add a *kind* property and give ut the value 'linux'
 
 * Add a *properties* section to the app service plan resource, and add a property called *reserved* with the value true.
