@@ -17,7 +17,7 @@ You can find the latest installation instructions for your environment here:
 https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/install
 
 Verify that you have the Bicep CLI working properly by running:
-```
+```bat
 az bicep version
 ```
 
@@ -71,23 +71,23 @@ uniqueString will generate a deterministic hash string based on the input. This 
 Now, create the app service by using the snippets again by typing *res-web-app* and hit ENTER.
 
 * Reference the variable for the name of the app service
-  ```
+  ```bicep
   name: webAppName
   ```
 * Change the reference to the app service plan (the *serverFarmId* property) from a string to a typed reference, using the *appServicePlan.id* property
-  ```
+  ```bicep
   properties: {
     serverFarmId: appServicePlan.id
   }
   ```
 * Specify that the app service should use a managed identity, by adding in _identity_ section to the resource (https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet).
-  ```
+  ```bicep
     identity: {
     type: 'SystemAssigned'
   }
   ```
 * Specify that this should run as a Linux docker container and which image to use, by adding a new _siteConfig_ section within the properties section. In it, add a _linuxFxVersion_ property that should contain the full name of the docker image:
-```
+```bicep
   properties: {
     serverFarmId: appServicePlan.id
     siteConfig:{
@@ -103,7 +103,7 @@ Now, create the app service by using the snippets again by typing *res-web-app* 
 
 Your webApplication resource should now look something like this:
 
-```
+```bicep
 resource webApplication 'Microsoft.Web/sites@2018-11-01' = {
   name: webAppName
   location: resourceGroup().location
@@ -138,13 +138,13 @@ resource webApplication 'Microsoft.Web/sites@2018-11-01' = {
 
 Let's deploy this template to your Azure subscription. Before we do this, we need to create a resource group that will contain our resources. To do this, we use the _az group create_ command. Replace <myResourceGroup> with a suitable name:
 
-```
+```bat
 az group create --name <myResourceGroupName> --location westeurope
 ```
 
 Then, run the following command from the directory where your Bicep template is located:
 
-```
+```bat
 az deployment group create --resource-group <myResourceGroupName> --template-file template.bicep
 ```
 
@@ -153,7 +153,7 @@ This will generate an ARM template and then submit it to Azure Resource Manager 
 To test the web application that you just deployed, you need to find out what name has been assigned to it. You can do this in the Azure portal, but working with the CLI is usually faster and more efficient.
 
 To list all web applications in your current subscription, run
-```
+```bat
 az webapp list -o table
 ```
 Locate your web app and copy the URL shown in the *DefaultHostName* column (\*\*\*\*\*.azurewebsites.net)
@@ -174,12 +174,12 @@ To start with, we want to be able to specify which service plan (SKU) to use for
 
 Add a new parameter at the top of the file:
 
-```
+```bicep
 param appServicePlanSku string
 ```
 Then change the appServicePlan sku setting to refer to the parameter instead:
 
-```
+```bicep
 sku: {
     name: appServicePlanSku
     capacity: 1
@@ -191,7 +191,7 @@ A convenient way to pass the parameter values to a deployment is to create a sep
 Add a new file called *template.parameters.json* to the same folder as the template.bicep file, and paste in the following code:
 
 **template.parameters.json**
-```
+```json
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
@@ -205,7 +205,7 @@ Add a new file called *template.parameters.json* to the same folder as the templ
 
 To use this file when deploying, use the --parameters option and specify the parameters file like this:
 
-```
+```bat
 az deployment group create --resource-group <myResourceGroupName> --template-file template.bicep --parameters "@template.parameters.json"
 ```
 The deployment should complete successfully without making any changes.
@@ -220,26 +220,26 @@ https://docs.microsoft.com/en-us/azure/key-vault/general/basic-concepts
 
 First, add a variable in the template.bicep file that will generate a unique name for the key vault:
 
-```
+```bicep
 var keyVaultName = 'keyvault${uniqueString(resourceGroup().id)}'
 ```
 
 * Then use the snippet again by typing in the template.bicept file *res-keyvault* and hit ENTER to create the resource for the azure keyvault.
   
 * Use the variable to assign the name to the vault.
-  ```
+  ```bicep
   resource keyVault 'Microsoft.KeyVault/vaults@2019-09-01' = {
     name: keyVaultName
   ```
 * Remove everything except name, location, tenantId and the sku properties. Change the tenantId property to reference the tenantId property of the current subscription (which you can access through the subscription() function)
   
-```
+```bicep
 tenantId: subscription().tenantId
 ```
   
 * Add an empty accessPolicies section:
   
-```
+```bicep
 accessPolicies:[]
 ```
 
@@ -255,7 +255,7 @@ In addition, we'll add a secret to the key vault. The demo application will read
 
 The key vault resource, including the secret, should now look something like this:
 
-```
+```bicep
 resource keyVault 'Microsoft.KeyVault/vaults@2021-04-01-preview' = {
   name: keyVaultName
   location: resourceGroup().location
@@ -280,7 +280,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-04-01-preview' = {
 
 To be able to fetch information from the key vault, the web app needs to know the name of the KeyVault. For this, the web application expects an app setting called __KeyVaultName__ that should contain the name of the KeyVault. Within the existing _appSettings_ section of the appService, add a new setting for the keyVaultName:
 
-```
+```bicep
 appSettings: [
         {
           name: 'keyVaultName'
@@ -295,7 +295,7 @@ appSettings: [
 
 Save the file, and run the deployment command again to create the key vault.
 
-```
+```bat
 az deployment group create --resource-group <myResourceGroupName> --template-file template.bicep --parameters "@template.parameters.json"
 ```
 
@@ -303,7 +303,7 @@ Go back to the web page (****.azurewebsites.net) and refresh the page. Unfortuna
 
 Modify the *accessPolicies* section in the *keyVault* resource to look like this:
 
-```
+```bicep
  accessPolicies: [
       {
         tenantId: subscription().tenantId
@@ -329,7 +329,7 @@ The web application uses SQL as storage, so we need to create an Azure SQL Serve
 
 First, add some variables containing the (unique) name of the SQL Server, the name of the database and the credentials:
 
-```
+```bicep
 var sqlServerName = 'sqlserver${uniqueString(resourceGroup().id)}'
 var sqlDbName = 'infradb'
 var sqlAdministratorLogin = 'infraadmin'
@@ -352,7 +352,7 @@ To add the two snippets for an Azure SQL Server resource and an Azure SQL databa
   
 * Reference the names of both the resources (sqlServerName and sqlDbName).
 
-```
+```bicep
 resource sqlServer 'Microsoft.Sql/servers@2014-04-01' ={
   name: sqlServerName
   location: resourceGroup().location
@@ -376,7 +376,7 @@ Now we have the web app and the database defined, but we need to make sure that 
 
 We can define the connection string in the siteConfig/connectionStrings property in the *webApplication* resource, like so:
 
-```
+```bicep
 siteConfig: {
       linuxFxVersion: 'DOCKER|iacworkshop.azurecr.io/infrawebapp:v1'
 
@@ -392,7 +392,7 @@ siteConfig: {
 
 Next up, we will set the managed identity of the app service as the active directory admin of the Azure SQL Server, using the administrators resoure within the SQL Server resource:
 
-```
+```bicep
   resource sqlServerName_activeDirectory 'administrators@2021-02-01-preview' = {
    name: 'ActiveDirectory'
    properties: {
@@ -408,7 +408,7 @@ Next up, we will set the managed identity of the app service as the active direc
 
 Finally, to make sure that the traffic between the app service and the database is allowed through, we need to add a firewall rule to the SQL Server resource that allows all traffic coming from within Azure:
 
-```
+```bicep
   resource sqlServerName_AllowAllWindowsAzureIps 'firewallRules@2021-02-01-preview' = {
     name: 'AllowAllWindowsAzureIps'
     properties: {
@@ -420,7 +420,7 @@ Finally, to make sure that the traffic between the app service and the database 
 
 The whole sqlServer resource should now look like this:
 
-```
+```bicep
 resource sqlServer 'Microsoft.Sql/servers@2014-04-01' = {
   name: sqlServerName
   location: resourceGroup().location
@@ -462,7 +462,7 @@ Redeploy the template, and then refresh the web application. The error about the
 > **Note**: 
   If you want to see all the resources that you have created so far, you can either browse to the resource group in the Azure portal, or you can run the following command:
 
-  ```
+  ```bat
   az resource list --resource-group <myResourceGroup> -o table
   ```
   
@@ -480,7 +480,7 @@ Of course we want to make sure that we are monitoring our app service, and to do
 * Name it 'logAnalytics'
   
 * Change the sku property value to 'PerGB2018'
-```
+```bicep
     sku: {
       name: 'PerGB2018'
     }
@@ -492,7 +492,7 @@ Of course we want to make sure that we are monitoring our app service, and to do
   
 * Add a reference to the logAnalyticsWorkspace id
 
-```
+```bicep
  properties: {
    Application_Type: 'web'
    WorkspaceResourceId:logAnalyticsWorkspace.id
@@ -501,7 +501,7 @@ Of course we want to make sure that we are monitoring our app service, and to do
 
 * To connect the appInsights resource with the app service resource, add a *tags* section to the appInsights resource that contains the id of the app service resource:
 
-```
+```bicep
 tags: {
     'hidden-link:${webApplication.id}': 'Resource'
   }
@@ -509,7 +509,7 @@ tags: {
 
 Both resources should now look like this:
 
-```
+```bicep
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10-01' = {
   name: 'logAnalytics'
   location: resourceGroup().location
@@ -538,7 +538,7 @@ The last step is to configure the app settings of the app service to include the
 
 Instead, we can extract the app settings into a separate resource, that depends on both the app service and the app insights resource. This resolves the cyclic dependency problem. Add the following new resource:
 
-```
+```bicep
 resource webAppSettings 'Microsoft.Web/sites/config@2021-01-15' = {
   name: '${webApplication.name}/web'
   properties: {
@@ -592,13 +592,13 @@ In the beginning of this lab, you went looking for the generated name of the web
 
 We can use output variables to overcome this problem, by specifying information that should be returned when running the deployment. Let's add an output variable that will contain the name of the generated web app name:
 
-```
+```bicep
 output websiteAddress string = 'https://${webApplication.properties.defaultHostName}/'
 ```
 
 Run the deployement again. When it has finished, you can access the output by using the az deployment group show command:
 
-```
+```bat
 az deployment group show --name template --resource-group <resourceGroupName> --query properties.outputs.websiteAddress.value
 ```
 
@@ -620,7 +620,7 @@ In Bicep, you can use *modules* to split up a deployment template in multiple pa
 
 To make it a usable module, the template that uses it must be able to pass in the required information as parameters, and then reference the output of this module. So we need to add parameters for the information that the app service and app insights resource needs, and then we will return the generated app service as an output property. Add the following parameters at the top of the webapp.bicep file:
 
-```
+```bicep
 param appServicePlanId string
 param keyVaultName string
 param sqlServerFQDN string
@@ -630,7 +630,7 @@ param logAnalyticsWorkspaceId string
 
 Now change all of the resources variables to the new parameters, so for example *sqlServer.properties.fullyQualifiedDomainName* in the connectionstring becomes *sqlServerFQDN* and so on.
 
-```
+```bicep
 connectionStrings: [
         {
           name: 'infradb'
@@ -641,7 +641,7 @@ connectionStrings: [
 
 to
 
-```
+```bicep
 connectionStrings: [
         {
           name: 'infradb'
@@ -652,7 +652,7 @@ connectionStrings: [
 
 Then add the following output properties at the end of the file:
 
-```
+```bicep
 output webApplicationName string = webApplication.name
 output webApplicationPrincipalId string = webApplication.identity.principalId
 output webApplicationTenantId string = webApplication.identity.tenantId
@@ -661,7 +661,7 @@ output webApplicationDefaultHostName string = webApplication.properties.defaultH
   
  To use the module, we'll import it using the *module* keyword that references the file to import, and passing the necessary parameters. Add it at the end of the *template.bicep* file, right before the output variable:
 
-```
+```bicep
 module webModule 'webapp.bicep' = {
   name: 'webAppDeploy'
   params: {
@@ -678,7 +678,7 @@ Now, what's left to do is to modify all references to the webApplication and app
 
 So, for example, change:
 
-```
+```bicep
   resource sqlServerName_activeDirectory 'administrators@2021-02-01-preview' = {
     name: 'ActiveDirectory'
     properties: {
@@ -692,7 +692,7 @@ So, for example, change:
 
 to
 
-```
+```bicep
  resource sqlServerName_activeDirectory 'administrators@2021-02-01-preview' = {
     name: 'ActiveDirectory'
     properties: {
@@ -719,13 +719,13 @@ To add the SQL secrets to the key vault, we must first give ourself access to th
 
 First, retrieve the object ID for your user, by running:
 
-```
+```bat
 az ad user show --id <youremail>
 ```
 
 Grab the KeyVault name and the id:
 
-```
+```bat
 az keyvault list
 ```
 
@@ -733,13 +733,13 @@ az keyvault list
 
 Grab the objectId and KeyVault name from the outputs and use it in the next command:
 
-```
+```bat
 az keyvault set-policy --name <keyVaultName> --object-id <yourUserObjectId> --secret-permissions get list set
 ```
 
 Now, you can add the following secrets:
 
-```
+```bat
 az keyvault secret set --vault-name <keyVaultName> --name sqlAdminLogin --value infraadmin
 az keyvault secret set --vault-name <keyVaultName> --name sqlAdminPassword --value <yourSecurePassword>
 ```
@@ -752,7 +752,7 @@ To use these values, we can now reference the secrets directly from the paramete
 
 * Add the following parameters to your bicep file:
 
-```
+```bicep
 param sqlAdministratorLogin string
 @secure()
 param sqlAdministratorPassword string
@@ -760,7 +760,7 @@ param sqlAdministratorPassword string
 
 * Then add the following parameters to your template.parameters.json file, replacing \<subscriptionId\>, \<resourceGroupName\> and \<keyVaultName\> with your values:
 
-```
+```bicep
   "sqlAdministratorLogin": {
      "reference": {
          "keyVault": {
@@ -781,13 +781,13 @@ param sqlAdministratorPassword string
 
 > **TIP**: If you didn't copy the KeyVault id earlier in the lab then grab the subscription id by running:
 
-```
+```bat
 az account show --query id
 ```
 
 Or the whole KeyVault id by running:
 
-```
+```bat
 az keyvault list
 ```
 
@@ -795,7 +795,7 @@ When running the deployment, it will now dynamically fetch the secrets from the 
 
 Run the deployment. You will get an error, stating that the secrets can't be retrieved. The reason for this is that the Azure Resource Manager (ARM) service doesn't have permission by default to read from our keyvault. This can easily be enabled by adding a single property to the keyvault resource, *enabledForTemplateDeployment*:
 
-```
+```bicep
 resource keyVault 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
   location: resourceGroup().location
@@ -809,7 +809,7 @@ Redeploy the template. You will still get the same error and the reason for this
 
 Run the following command to update your keyvault to allow the ARM service to reference it during deployments:
 
-```
+```bat
 az keyvault update --name <keyVaultName> --enabled-for-template-deployment true
 ```
 
