@@ -44,7 +44,7 @@ Make the following changes to the resource:
 * Add a *properties* section to the app service plan resource, and add a property called *reserved* with the value true.
 
 When done, your resource should look like this:
-```
+```bicep
 resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
   name: 'appServicePlan'
   location: resourceGroup().location
@@ -63,7 +63,7 @@ Azure App Services are deployed in the global _.azurewebsites.net_ domain and th
 
 Add this to the top of the file.
 
-```
+```bicep
 var webAppName = 'webapp${uniqueString(resourceGroup().id)}'
 ```
 uniqueString will generate a deterministic hash string based on the input. This means that it will return the same output value every time, if we call it with the same input value. In this case we pass the id of the our resource group. Since that will not change over the lifetime of the resource group, we will get the same name for the app service every time. Read more about the uniqueString template functiom here: https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/template-functions-string#uniquestring
