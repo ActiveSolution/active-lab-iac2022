@@ -342,12 +342,13 @@ resource "azurerm_app_service_plan" "plan" {
   }
 }
 
-resource "random_id" "suffix" {
-  byte_length = 8
+resource "random_string" "suffix" {
+  length  = 8
+  special = false
 }
 
 locals {
-  suffix = lower(random_id.suffix.id)
+  suffix = lower(random_string.suffix.id)
 }
 
 resource "azurerm_app_service" "app" {
