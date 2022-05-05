@@ -7,13 +7,13 @@ To complete the lab you need to have completed the Bicep lab, and have the creat
 __Note:__ You will also need to have the Azure CLI installed, and logged in, but this should already be in place from the lab.
 
 ## Creating the GitHub repo
-The first thing we need to do, is to get the code into GitHub. So, start off by going to GitHub, and create a new repo. 
+The first thing we need to do, is to get the code into GitHub. So, start off by going to GitHub and create a new repo. 
 
 You can name it whatever you want, and make it private if you do not want anyone to see it.
 
 __Comment:__ Do not add a README, .gitignore file or license. Leave the repo completely empty.
 
-Once this is done, you will be faced with a screen that explain how you can add a new repo. You can follow those steps more or less completely. However, the `README.md` file os not needed, so you can skip that step. And you want to add _everything_ in your directory. So use `git add -A` instead of the suggested `git add README.md`. Like this
+Once this is done, you will be faced with a screen that explains how you can add a new repo. You can follow those steps more or less completely. However, the `README.md` file is not needed, so you can skip that step. And you want to add _everything_ in your directory. So use `git add -A` instead of the suggested `git add README.md`. Like this
 
 ```bash
 > git init
@@ -30,7 +30,7 @@ Once this is done, you should be able to view your code on GitHub by browsing to
 ## Creating a Service Principal
 When the GitHub action talks to Azure to create your infrastructure, it needs to use some form of credentials. These credentials are created by creating a `Service Principal`. This is like a system user that can be given access to perform actions in the Azure subscription. 
 
-In this case, you want to limit where the principal can make changes to a single resource group. So you first need to create the resource group that you want to deploy to by running
+In this case, you want to limit the principal so that it can only make changes in a single resource group. So you first need to create the resource group that you want to deploy to by running
 
 ```bash
 > az group create -n GitHubBicepGroup -l westeurope
@@ -146,9 +146,9 @@ So to add that, you just have to add another `uses` entry
       - uses: azure/login@v1
 ```
 
-__Note:__ Remember that YAML is whatespace sensitive. So make sure you get you indentation correct!
+__Note:__ Remember that YAML is whitespace sensitive. So make sure you get you indentation correct!
 
-Any step, or `uses` entry can have parameters. These are passed in using a siblign entry called `with`, defining the parameters as child entries. In this case, the `azure/login@v1` Action has a parameter called `creds`, that should contain the credentials to use when loggin in. Luckily, the format to be used when setting the credentials, happens to be the same that we got from the `az ad sp create-for-rbac` call and added to the `AZURE_CREDENTIALS` secret.
+Any step, or `uses` entry can have parameters. These are passed in using a sibling entry called `with`, defining the parameters as child entries. In this case, the `azure/login@v1` Action has a parameter called `creds`, that should contain the credentials to use when loggin in. Luckily, the format to be used when setting the credentials, happens to be the same that we got from the `az ad sp create-for-rbac` call and added to the `AZURE_CREDENTIALS` secret.
 
 So to log in using the Service Principal we created, you just need to write
 
