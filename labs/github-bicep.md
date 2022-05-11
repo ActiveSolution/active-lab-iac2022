@@ -270,15 +270,15 @@ If you have time left over, and want to try out some extra things, here are some
 
 ### Add a "what-if" step
 
-When running your Bicep templates in a pipeline it can be hard to figure out what will happen. Because of this, it might be a good idea to add a pipeline step that runs `az deployment group what-if`.
+When running your Bicep templates in a pipeline it can be hard to figure out what will happen. Because of this, it can often be a good idea to add a pipeline step that runs `az deployment group what-if`. This operation will evaluate what would happen if the deployment would proceed, e.g. ehich resources that would be added, deleted and/or modified. 
 
 Unfortunately, there is no pre-defined GitHub action to do this, so you will have to use something like the [Azure CLI Action](https://github.com/marketplace/actions/azure-cli-action).
 
 ### Add a manual approval step
 
-Being able to view the output from `what-if` is nice, as it allows you to see what happened when you ran the pipeline. However, in a log of cases it would be even better if you were allowed to look at before it was run, and able to approve or deny the deployment of the Bicep template.
+Being able to view the output from `what-if` is nice, as it allows you to see what happened when you ran the pipeline. However, in reality it would be much better if you were allowed to look at the changes before it was deployed, and also be able to approve or deny the deployment of the Bicep template based on those reported changes.
 
-For this, you can use for example the [Manual Workflow Approval](https://github.com/marketplace/actions/manual-workflow-approval) action. This allows you to break the pipeline and wait for a manual approval before running the rest of the pipeline. 
+To do this, one option is to use the [Manual Workflow Approval](https://github.com/marketplace/actions/manual-workflow-approval) action. This allows you to pause the pipeline and wait for a manual approval before proceeding with running the rest of the pipeline. 
 
 ## Clean up
 When you are done playing around with the workflow, you can remove all the generated resources by running
