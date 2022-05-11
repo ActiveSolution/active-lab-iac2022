@@ -26,3 +26,4 @@ Here are the links to each lab:
 * [Bicep lab](labs/bicep.md)
 * [Terraform lab](labs/terraform.md)
 * [Pulumi lab](labs/pulumi.md)
+* [CI/CD Lab with Bicep and GitHub actions](labs/github-bicep.md)
