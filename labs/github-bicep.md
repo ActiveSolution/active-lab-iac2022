@@ -19,7 +19,7 @@ Once this is done, you will be faced with a screen that explains how you can add
 > git init
 > git add -A
 > git commit -m "Initial commit"
-> git remote add origin git@github.com:<GITHUB USERNAME>/<REPO NAME>.git
+> git remote add origin https://github.com/<GITHUB USERNAME>/<REPO NAME>.git
 > git push -u origin main
 ```
 
