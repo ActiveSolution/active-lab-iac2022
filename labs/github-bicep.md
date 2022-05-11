@@ -9,7 +9,7 @@ __Note:__ You will also need to have the Azure CLI installed, and logged in, but
 ## Creating the GitHub repo
 The first thing we need to do, is to get the code into GitHub. So, start off by going to GitHub and create a new repo. 
 
-You can name it whatever you want, and make it private if you do not want anyone to see it.
+You can name it whatever you want, and make it private.
 
 __Comment:__ Do not add a README, .gitignore file or license. Leave the repo completely empty.
 
