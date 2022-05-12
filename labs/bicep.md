@@ -355,6 +355,12 @@ This will create an access policy for the identity of the app service, and give 
 
 Redeploy the template again using the same command as before, and then refresh the web page. The error message about the keyvault is missing should now be gone.
 However, it now complains that a connection string to the SQL database is missing.
+  
+**Note** You might have to restart the web app in order to make it re-read the setting from key vault. You can do that from the portal or through the CLI like this:
+  
+```
+az webapp restart -g <resourceGroup> -n <webApp>
+```
 
 
 ## Add SQL storage
