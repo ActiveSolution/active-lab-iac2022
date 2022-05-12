@@ -272,13 +272,23 @@ If you have time left over, and want to try out some extra things, here are some
 
 When running your Bicep templates in a pipeline it can be hard to figure out what will happen. Because of this, it can often be a good idea to add a pipeline step that runs `az deployment group what-if`. This operation will evaluate what would happen if the deployment would proceed, e.g. ehich resources that would be added, deleted and/or modified. 
 
-Unfortunately, there is no pre-defined GitHub action to do this, so you will have to use something like the [Azure CLI Action](https://github.com/marketplace/actions/azure-cli-action).
+There is no currently no pre-defined GitHub action to do this, so you will have to use something like the [Azure CLI Action](https://github.com/marketplace/actions/azure-cli-action).
+
+Unfortunately, currently there is a problem with the arm-deploy task if you run that after an Azure CLI task. So, you will need to remove that task and instead deploy your bicep file using the Azure CLI (using the *az deployment group create* command)
 
 ### Add a manual approval step
 
 Being able to view the output from `what-if` is nice, as it allows you to see what happened when you ran the pipeline. However, in reality it would be much better if you were allowed to look at the changes before it was deployed, and also be able to approve or deny the deployment of the Bicep template based on those reported changes.
 
 To do this, one option is to use the [Manual Workflow Approval](https://github.com/marketplace/actions/manual-workflow-approval) action. This allows you to pause the pipeline and wait for a manual approval before proceeding with running the rest of the pipeline. 
+
+*Note* This task implements approval by creating an issue (see the documentation) as the resource of approval. In order for the github action to do so, you must give it the necessary permissions. Add the following to your yaml file:
+
+```
+permissions:
+  contents: read 
+  issues: write 
+```
 
 ## Clean up
 When you are done playing around with the workflow, you can remove all the generated resources by running
