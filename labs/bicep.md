@@ -21,6 +21,39 @@ Verify that you have the Bicep CLI working properly by running:
 az bicep version
 ```
 
+With the tools in place, you need to either log in to the Azure CLI, or, if you are already logged in, validate that you are using the correct subscription.
+
+To log in, run the following command, and go through the login procedure
+
+```bash
+> az login
+```
+
+To validate that you are using the correct subscription, you can run
+
+```bash
+> az account show
+{
+  ...
+  "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+  ...
+  "name": "My Subscription"
+}
+```
+
+If this is not the required subscription, you can list the available subscriptions by running
+
+```bash
+> az account list
+```
+
+and select the subscription you want by running
+
+```bash
+> az account set -s <SUBSCRIPTION ID>
+```
+
+
 ## Setting up the project
 Create a new folder for your bicep project and open the folder in Visual Studio Code. In the folder, create a new file called _template.bicep_. Open the file in the editor and verify that the Bicep extension in Visual Studio code is working properly. This extension will help you to develop Bicep files much more efficiently, by adding Intellisense and code snippets.
 
