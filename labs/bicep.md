@@ -44,7 +44,7 @@ To validate that you are using the correct subscription, you can run
 If this is not the required subscription, you can list the available subscriptions by running
 
 ```bash
-> az account list
+> az account list -o table
 ```
 
 and select the subscription you want by running
