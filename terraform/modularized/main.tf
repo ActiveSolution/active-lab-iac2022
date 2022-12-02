@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.65"
+      version = "=3.34.0"
     }
   }
 }
@@ -11,24 +11,17 @@ provider "azurerm" {
   features {}
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_resource_group" "rg" {
   name     = var.project_name
   location = "westeurope"
 }
 
-resource "azurerm_app_service_plan" "plan" {
+resource "azurerm_service_plan" "plan" {
   name                = "${local.project_name}-plan"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  kind                = "linux"
-  reserved            = true
-
-  sku {
-    tier = var.app_service_plan_tier
-    size = var.app_service_plan_sku
-  }
+  os_type             = "Linux"
+  sku_name            = var.app_service_plan_sku
 }
 
 resource "random_string" "suffix" {
@@ -56,7 +49,9 @@ resource "azurerm_key_vault" "kv" {
       "Get",
       "List",
       "Set",
-      "Delete"
+      "Delete",
+      "Purge",
+      "Recover"
     ]
   }
 
@@ -70,6 +65,8 @@ resource "azurerm_key_vault" "kv" {
     ]
   }
 }
+
+data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault_secret" "secret" {
   name         = "testSecret"
@@ -118,16 +115,16 @@ resource "azurerm_log_analytics_workspace" "laws" {
 }
 
 module "web" {
-  source = "./web-app"
-  web_name = "${var.project_name}-web-${local.suffix}"
-  ai_name = "${var.project_name}-ai-${local.suffix}"
-  location = azurerm_app_service_plan.plan.location
-  resource_group_name = azurerm_app_service_plan.plan.resource_group_name
-  app_service_plan_id = azurerm_app_service_plan.plan.id
-  app_service_plan_tier = var.app_service_plan_tier
-  key_vault_name = "${local.project_name}-kv-${local.suffix}"
-  sql_server_domain_name = "${local.project_name}-sql-${local.suffix}"
-  db_name = "infradb"
+  source                     = "./web-app"
+  web_name                   = "${var.project_name}-web-${local.suffix}"
+  ai_name                    = "${var.project_name}-ai-${local.suffix}"
+  location                   = azurerm_service_plan.plan.location
+  resource_group_name        = azurerm_service_plan.plan.resource_group_name
+  app_service_plan_id        = azurerm_service_plan.plan.id
+  app_service_plan_sku       = var.app_service_plan_sku
+  key_vault_name             = "${local.project_name}-kv-${local.suffix}"
+  sql_server_domain_name     = "${local.project_name}-sql-${local.suffix}"
+  db_name                    = "infradb"
   log_analytics_workspace_id = azurerm_log_analytics_workspace.laws.id
 }
 

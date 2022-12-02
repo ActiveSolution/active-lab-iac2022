@@ -1,19 +1,22 @@
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   name                = var.web_name
   location            = var.location
   resource_group_name = var.resource_group_name
-  app_service_plan_id = var.app_service_plan_id
+  service_plan_id     = var.app_service_plan_id
 
   site_config {
-    linux_fx_version          = "DOCKER|iacworkshop.azurecr.io/infrawebapp:v1"
-    always_on                 = lower(var.app_service_plan_tier) == "free" ? false : true
-    use_32_bit_worker_process = lower(var.app_service_plan_tier) == "free" ? true : false
+    application_stack {
+      docker_image     = "iacworkshop.azurecr.io/infrawebapp"
+      docker_image_tag = "v1"
+    }
+    always_on         = startswith(lower(var.app_service_plan_sku), "f") ? false : true
+    use_32_bit_worker = startswith(lower(var.app_service_plan_sku), "f") ? true : false
   }
 
   app_settings = {
     DOCKER_REGISTRY_SERVER_URL                 = "https://iacworkshop.azurecr.io"
-    DOCKER_REGISTRY_SERVER_USERNAME            = "iacworkshop",
-    DOCKER_REGISTRY_SERVER_PASSWORD            = "XXX"
+    DOCKER_REGISTRY_SERVER_USERNAME            = "iacworkshop"
+    DOCKER_REGISTRY_SERVER_PASSWORD            = "XXXXXXXXXXXX"
     KeyVaultName                               = var.key_vault_name
     APPINSIGHTS_INSTRUMENTATIONKEY             = azurerm_application_insights.ai.instrumentation_key
     APPLICATIONINSIGHTS_CONNECTION_STRING      = azurerm_application_insights.ai.connection_string
@@ -21,14 +24,14 @@ resource "azurerm_app_service" "app" {
     XDT_MicrosoftApplicationInsights_Mode      = "recommended"
   }
 
-  identity {
-    type = "SystemAssigned"
+  connection_string {
+    name  = var.db_name
+    type  = "SQLAzure"
+    value = "Data Source=tcp:${var.sql_server_domain_name}.database.windows.net,1433;Initial Catalog=infradb;Authentication=Active Directory Interactive;"
   }
 
-  connection_string {
-    name  = "infradb"
-    type  = "SQLAzure"
-    value = "Data Source=tcp:${var.sql_server_domain_name}.database.windows.net,1433;Initial Catalog=${var.db_name};Authentication=Active Directory Interactive;"
+  identity {
+    type = "SystemAssigned"
   }
 }
 
@@ -40,14 +43,14 @@ resource "azurerm_application_insights" "ai" {
   application_type    = "web"
 }
 
-output "website_address" {
-  value = "https://${azurerm_app_service.app.default_site_hostname}/"
-}
-
 output "web_app_name" {
-  value = azurerm_app_service.app.name
+  value = azurerm_linux_web_app.app.name
 }
 
 output "web_app_identity" {
-  value = azurerm_app_service.app.identity[0]
+  value = azurerm_linux_web_app.app.identity[0]
+}
+
+output "website_address" {
+  value = "https://${azurerm_linux_web_app.app.default_hostname}/"
 }

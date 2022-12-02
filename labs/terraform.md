@@ -1,5 +1,5 @@
 # Infrastructure as Code Labs - Terraform
-Welcome to the Terraform lap for the Infrastructure as Code workshop. In this lab, you will setup of the following infrastructure resources in Azure using Terraform, and validate your deployed infrastructure using a pre-built web application along the way:
+Welcome to the Terraform lap for the Infrastructure as Code workshop. In this lab, you will set up of the following infrastructure resources in Azure using Terraform, and validate your deployed infrastructure using a pre-built web application along the way:
 
 * Azure App Service running on Linux
 * Azure Key Vault for storing sensitive information, such as passwords
@@ -7,6 +7,7 @@ Welcome to the Terraform lap for the Infrastructure as Code workshop. In this la
 * Application Insights resource backed by a Log Analytics workspace
 
 ## Prerequisites
+
 To complete the lab you need to install the Terraform tooling which include
 
 * Azure CLI
@@ -80,20 +81,22 @@ and select the subscription you want by running
 ```
 
 ## Setting up the project
-Create a new folder for you Terraform project and open the folder in Visual Studio Code. In the folder, create a new file called *main.tf*, and open it in the editor. 
 
-If you have installed the Terraform extension, you can look at the lower right corner to make sure that it is activated for the current file
+Create a new folder for you Terraform project and open the folder in Visual Studio Code. In the folder, create a new file called _main.tf_, and open it in the editor. 
+
+If you have installed the Terraform extension, you can look in the lower right corner to make sure that it is activated for the current file
 
 ![image](./images/terraform-extension.png)
 
 ## Setting up Terraform
+
 Before you can start defining the infrastructure, you need to configure Terraform to support the creation of Azure resources. This is done by configuring a *provider*. In this case the `hashicorp/azurerm` provider.
 
 To define a provider, you first add a `terraform` block, and inside that you define your required providers using the `required_providers` section.
 
 __Note:__ Information about how to configure providers are available at https://www.terraform.io/docs/language/providers/requirements.html
 
-In this case, you want to use version `~> 2.65` of the `hashicorp/azurerm` provider.
+In this case, you want to use version `=3.34.0` of the `hashicorp/azurerm` provider.
 
 This should end up with a `terraform` block at the top of your file that looks like this
 
@@ -102,7 +105,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.65"
+      version = "=3.34.0"
     }
   }
 }
@@ -116,9 +119,9 @@ provider "azurerm" {
 }
 ```
 
-__Note:__ The `features` block is used to set generalized settings for certain resource types. However, in this lab, you will not be using any of these. But it sill needs an empty configuration to work.
+__Note:__ The `features` block is used to set generalized settings for certain resource types. However, in this lab, you will not be using any of these. But it still needs an empty configuration to work.
 
-In this lab, we will store the Terraform state locally, but it is definitely recommended to store it in some central location like the cloud for production scenarios. This is configured using a so called _backend_. More information about this can be found at: https://www.terraform.io/docs/language/settings/backends/index.html
+In this lab, we will store the Terraform state locally, but it is definitely recommended storing it in some central location like the cloud for production scenarios. This is configured using a so called _backend_. More information about this can be found at: https://www.terraform.io/docs/language/settings/backends/index.html
 
 Now that you have configured Terraform to use the `azurerm` provider, you can initialize Terraform in your local directory by running 
 
@@ -129,6 +132,7 @@ Now that you have configured Terraform to use the `azurerm` provider, you can in
 This will create a `.terraform` folder to store the binaries used during deployment etc, and a `.terraform.lock.hcl` file that is used to lock the versions of the dependencies being used.
 
 ## Azure App Service
+
 To run a web application on Azure App Service, you need an app service plan and an app service. 
 
 However, before you can create these resources, you need a Resource Group to put it in.
@@ -161,11 +165,11 @@ __Note:__ Information about all the resources available in the Terraform Azure p
 
 Now that you have a place to put your App Service Plan and App Service, you can turn your focus to defining these.
 
-To create the app service plan, you need to create another resource. In this case an `azurerm_app_service_plan` resource called __plan__.
+To create the app service plan, you need to create another resource. In this case an `azurerm_service_plan` resource called __plan__.
 
 __Note:__ The name can be anything you want, but the lab will assume that the name is __plan__. If you choose another name, just remember to substitute it when the plan is referenced in future parts of the lab.
 
-For this `azurerm_app_service_plan` resource, you need to set a few properties.
+For this `azurerm_service_plan` resource, you need to set a few properties.
 
 Luckily, if you have installed the Terraform extension, you should be able to get some help with this. Just put the caret inside the resource and press `Ctrl + Space`. This should bring up a list of the available properties.
 
@@ -176,9 +180,8 @@ The properties you should set are
 * `name` - set to "terraformlab-plan"
 * `location` - set to the same location as the resource group
 * `resource_group_name` - set to the name of the resource group
-* `kind` - set to "linux"
-* `reserved` - set to true (required when using `kind = "linux"`)
-* `sku` - set to an object with `tier` and `size` properties set to "Free" and "F1"
+* `os_type` - set to "Linux"
+* `sku_name` - set to "F1" (Free)
 
 The `name` and `kind` properties are quite simple, as they are just strings. However, for the `location` and `resource_group_name` you can use a reference to the resource group resource instead of repeating the values.
 
@@ -186,17 +189,12 @@ To reference another resource's property you use the syntax `<RESOURCE TYPE>.<RE
 
 When done, your resource should look like this:
 ```
-resource "azurerm_app_service_plan" "plan" {
+resource "azurerm_service_plan" "plan" {
   name                = "terraformlab-plan"
-  location = azurerm_resource_group.rg.location
+  location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  kind                = "linux"
-  reserved            = true
-
-  sku {
-    tier = "Free"
-    size = "F1"
-  }
+  os_type             = "Linux"
+  sku_name            = "F1"
 }
 ```
 
@@ -219,7 +217,7 @@ __Note:__ You can find out about the `random_string` resource at: https://regist
 
 __Tip:__ If you find it hard getting the indentation correct, try pressing `Shift + Alt + F` to format your Terraform file. If you don't have the Terraform extension installed, you can also run the `terraform fmt` command. This will format all `.tf` tile in the current folder.
 
-The `random_string` resource will generate a string that might contains both upper and lower case letters. This can cause problems in some resource names, as some resources only support lower case letters. To solve this, you can transform the "ID" to lower case using the `lower()` function, and store the resulting value in a "local".
+The `random_string` resource will generate a string that might contain both upper and lower case letters. This can cause problems in some resource names, as some resources only support lower case letters. To solve this, you can transform the "ID" to lower case using the `lower()` function, and store the resulting value in a "local".
 
 __Note:__ There are quite a few function that you can use in Terraform. You can find all of them at: https://www.terraform.io/docs/language/functions/index.html
 
@@ -235,30 +233,33 @@ locals {
 
 __Note:__ You can find out about the `random_string` resource at: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/app_service
 
-Now that you have a random suffix to use for your resource names, you can go ahead and create the Web App. For this, you use the `azurerm_app_service` resource, setting the `name`, `location`, `resource_group_name` and `app_service_plan_id`. Once again, using references to the the other resources to set the values.
+Now that you have a random suffix to use for your resource names, you can go ahead and create the Web App. For this, you use the `azurerm_linux_web_app` resource, setting the `name`, `location`, `resource_group_name` and `service_plan_id`. Once again, using references to the other resources to set the values.
 
 For the `name` property, you can use the string interpolation syntax `"name-${local.suffix}"` to suffix your chosen name with the random value.
 
 ```
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   name                = "terraformlab-web-${local.suffix}"
-  location            = azurerm_app_service_plan.plan.location
-  resource_group_name = azurerm_app_service_plan.plan.resource_group_name
-  app_service_plan_id = azurerm_app_service_plan.plan.id
+  location            = azurerm_service_plan.plan.location
+  resource_group_name = azurerm_service_plan.plan.resource_group_name
+  service_plan_id     = azurerm_service_plan.plan.id
 }
 ```
 
-The `app_service_plan_id` defines what App Service Plan the app should be placed in.
+The `service_plan_id` defines what App Service Plan the app should be placed in.
 
-There are a couple of more settings that need to be added to the `azurerm_app_service` resource.
+There are a couple of more settings that need to be added to the `azurerm_linux_web_app` resource.
 
-First of all, you need to configure the app to use a Docker image called `iacworkshop.azurecr.io/infrawebapp:v1`. To do this, you need to add a `site_config` block, and set the `linux_fx_version` property to `DOCKER|iacworkshop.azurecr.io/infrawebapp:v1`
+First of all, you need to configure the app to use a Docker image called `iacworkshop.azurecr.io/infrawebapp:v1`. To do this, you need to add a `site_config` block, and set the `application_stack` properties `docker_image` and `docker_image_tag`. Like this
 
 ```
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   ...
   site_config {
-    linux_fx_version = "DOCKER|iacworkshop.azurecr.io/infrawebapp:v1"
+    application_stack {
+      docker_image     = "iacworkshop.azurecr.io/infrawebapp"
+      docker_image_tag = "v1"
+    }
   }
 }
 ```
@@ -271,7 +272,7 @@ This should make sure that the correct image is used for the application. Howeve
 
 To set the web app's app settings, you need to set the `app_settings` property to a string map with the keys and values you want to set. Like this
 ```
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   ...
   app_settings = {
     DOCKER_REGISTRY_SERVER_URL = "https://iacworkshop.azurecr.io"
@@ -280,15 +281,15 @@ resource "azurerm_app_service" "app" {
   }
 }
 ```
-Since you are configuring the App Service Plan to use the Free tier, you also need to turn off "Always On" and set the worker process to be 32-bit. This is done using the `always_on` and `use_32_bit_worker_process` properties in the `site_config` block.
+Since you are configuring the App Service Plan to use the Free tier, you also need to turn off "Always On" and set the worker process to be 32-bit. This is done using the `always_on` and `use_32_bit_worker` properties in the `site_config` block.
 
 ```
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   ...
   site_config {
     ...
-    always_on                 = false
-    use_32_bit_worker_process = true
+    always_on         = false
+    use_32_bit_worker = true
   }
 }
 ```
@@ -298,7 +299,7 @@ That's almost it. The last step is to configure the app to use a "System Assigne
 Configuring this is a matter of adding an `identity` block, and setting its `type` to `SystemAssigned`
 
 ```
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   ...
   identity {
     type = "SystemAssigned"
@@ -315,7 +316,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.65"
+      version = "=3.34.0"
     }
   }
 }
@@ -329,17 +330,12 @@ resource "azurerm_resource_group" "rg" {
   location = "westeurope"
 }
 
-resource "azurerm_app_service_plan" "plan" {
+resource "azurerm_service_plan" "plan" {
   name                = "terraformlab-plan"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  kind                = "linux"
-  reserved            = true
-
-  sku {
-    tier = "Free"
-    size = "F1"
-  }
+  os_type             = "Linux"
+  sku_name            = "F1"
 }
 
 resource "random_string" "suffix" {
@@ -351,16 +347,19 @@ locals {
   suffix = lower(random_string.suffix.id)
 }
 
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   name                = "terraformlab-web-${local.suffix}"
-  location            = azurerm_app_service_plan.plan.location
-  resource_group_name = azurerm_app_service_plan.plan.resource_group_name
-  app_service_plan_id = azurerm_app_service_plan.plan.id
+  location            = azurerm_service_plan.plan.location
+  resource_group_name = azurerm_service_plan.plan.resource_group_name
+  service_plan_id     = azurerm_service_plan.plan.id
 
   site_config {
-    linux_fx_version          = "DOCKER|iacworkshop.azurecr.io/infrawebapp:v1"
-    always_on                 = false
-    use_32_bit_worker_process = true
+    application_stack {
+      docker_image     = "iacworkshop.azurecr.io/infrawebapp"
+      docker_image_tag = "v1"
+    }
+    always_on         = false
+    use_32_bit_worker = true
   }
 
   app_settings = {
@@ -377,7 +376,15 @@ resource "azurerm_app_service" "app" {
 
 Now that the template is at a point where you can try and deploy it, there are a couple of things you can do. 
 
-First of all, you can verify the template, and see what resources it will CRUD. You can do this by running
+However, before you do anything else, you need to run 
+
+```bash
+> terraform init
+```
+
+again. The reason for this is that you added a new provider (the `random_string` provider).
+
+Once that is done, you can verify the template, and see what resources it will CRUD. You can do this by running
 
 ```bash
 > terraform plan
@@ -387,7 +394,7 @@ This should give you a "ton" of information about what will happen when you depl
 
 > Plan: 4 to add, 0 to change, 0 to destroy.
 
-__Note:__ You can also output this plan to a separate file that you can use to do the actual deployment later on. In this lab, you will not use this step, and instead deploy it manually from the template.
+__Note:__ You can also output this plan to a separate file that you can use to do the actual deployment later on. In this lab however, you will not do this. Instead, you will just deploy it manually from the template.
 
 After you have verified that Terraform wants to add 4 resources, you can deploy the infrastructure to Azure by running
 
@@ -395,7 +402,7 @@ After you have verified that Terraform wants to add 4 resources, you can deploy 
 > terraform apply
 ```
 
-When doing this, it will run `plan` for you automatically, output the same information as `terraform plan`, and then ask you if you want to proceed. Enter "yes" to start the deployment.
+When doing this, it will run `plan` for you automatically, output the same information as `terraform plan`, and then ask you if you want to proceed. Simply type "yes" and press enter to start the deployment.
 
 __Note:__ You can add `-auto-approve` to the command to skip the verification step. This is required in a non-interactive scenario like a deployment pipeline.
 
@@ -411,13 +418,13 @@ To test the web app, you need to find out what hostname was assigned to it. To f
 > az webapp list -o table
 ```
 
-Locate your web app and browse to the URL shown in the *DefaultHostName* column
+Locate your web app and browse to the URL shown in the _DefaultHostName_ column
 
 ![image](./images/website-1.png)
 
 __Note:__ It can take a couple of minutes for the web app to come online
 
-However, before we go any further, there is a small clean up task to perform. As you might have notices, the resources follow a convention that looks like this `<PROJECT NAME>-<RESOURCE TYPE>-<SUFFIX>`. This convention might be a bit simplistic, but works fine for something as small as this demo. However, you are currently repeating the `<PROJECT NAME>` part for every resource. If would definitely be a much better solution to move this to a `local` just as you did with the `suffix` value. So, go ahead and add another `local` called __project_name__, and update the resource names to use this value instead. Like this
+However, before we go any further, there is a small clean up task to perform. As you might have notices, the resources follow a convention that looks like this `<PROJECT NAME>-<RESOURCE TYPE>-<SUFFIX>`. This convention might be a bit simplistic, but works fine for something as small as this demo. However, you are currently repeating the `<PROJECT NAME>` part for every resource. It would definitely be a much better solution to move this to a `local` just as you did with the `suffix` value. So, go ahead and add another `local` called __project_name__, and update the resource names to use this value instead. Like this
 
 ```
 locals {
@@ -425,12 +432,12 @@ locals {
   project_name = "terraformlab"
 }
 
-resource "azurerm_app_service_plan" "plan" {
+resource "azurerm_service_plan" "plan" {
   name  = "${local.project_name}-plan"
   ...
 }
 
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   name = "${local.project_name}-web-${local.suffix}"
   ...
 }
@@ -443,7 +450,7 @@ Nice, this will remove a lot of repetition in the future, and make it a lot easi
 
 Instead of hard coding various values in the template, such as the project name and App Service Plan SKU, we can extract them into parameters that can be passed at deployment time. This allows us to for example deploy the same template into multiple environments (dev, test, prod) with different configuration in each environment.
 
-In Terraform, input parameters are defined using `variable` blocks. These blocks define at a minimum a variable name and a type. Byt it can also contain more information such as description and default value for example.
+In Terraform, input parameters are defined using `variable` blocks. These blocks define at a minimum a variable name and a type. But it can also contain more information such as description and default value for example.
 
 The first value you should turn into a variable is the project name. Right now, that is hard-coded to __terraformlab__.
 
@@ -464,7 +471,7 @@ As you can see, the type is set to string, and there is a description to make it
 
 __Note:__ For more information about Terraform variables, have a look at https://www.terraform.io/docs/language/values/variables.html
 
-With this new variable in place, you can now update both the name of the resource group, and the local that is used to prefix the resource names, using the syntax `var.<VARIABLE NAME>`. The name of the resource group can keep the default casing, but for the local it is best to make it lower-case as some resource do not allow for upper-case characters. Like this
+With this new variable in place, you can now update both the name of the resource group, and the local that is used to prefix the resource names, using the syntax `var.<VARIABLE NAME>`. The name of the resource group can keep the default casing, but for the local it is best to make it lower-case as some resources do not allow for upper-case characters. Like this
 
 ```
 resource "azurerm_resource_group" "rg" {
@@ -478,15 +485,9 @@ locals {
 }
 ```
 
-Next you can turn the App Service Plan tier and SKU into variables. Right now they are hard-coded to __Free__ and __F1__. Just open the __inputs.tf__ file and add two string based variables called __app_service_plan_tier__ and __app_service_plan_sku__. However, for these values you should add defaults that correspond to the current values. This makes sure that these values are used if no other values are provided during deployment. Like this
+Next you can turn the SKU name into variables. Right now it is hard-coded to __F1__. Just open the __inputs.tf__ file and add another string based variable called __app_service_plan_sku__. However, for this variable, you should add a default that correspond to the current value. This makes sure that this value is used if no other value is provided during deployment. Like this
 
 ```
-variable "app_service_plan_tier" {
-  type        = string
-  description = "App Service Plan Tier"
-  default     = "Free"
-}
-
 variable "app_service_plan_sku" {
   type        = string
   description = "App Service Plan SKU"
@@ -494,31 +495,31 @@ variable "app_service_plan_sku" {
 }
 ```
 
-With these variables in place, you need to update the `azurerm_app_service_plan` resource, setting the tier and SKU size using the variables instead of the hard-coded values.
+With this variable in place, you need to update the `azurerm_service_plan` resource, setting the SKU name using the variable instead of the hard-coded value.
 
 ```
-sku {
-    tier = var.app_service_plan_tier
-    size = var.app_service_plan_sku
+resource "azurerm_service_plan" "plan" {
+  ...
+  sku_name            = var.app_service_plan_sku
 }
 ```
 
-You can also update the `always_on` and `use_32_bit_worker_process` properties of the `azurerm_app_service` resource now that you might not be using the free tier that forces you to set these to less than optimal values.
+You can also update the `always_on` and `use_32_bit_worker` properties of the `azurerm_linux_web_app` resource now that you might not be using the free tier that forces you to set these to less than optimal values.
 
 To set these values, you can use a conditional expression like this
 
 ```
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   ...
   site_config {
     ...
-    always_on = lower(var.app_service_plan_tier) == "free" ? false : true
-    use_32_bit_worker_process = lower(var.app_service_plan_tier) == "free" ? true : false
+    always_on         = startswith(lower(var.app_service_plan_sku), "f") ? false : true
+    use_32_bit_worker = startswith(lower(var.app_service_plan_sku), "f") ? true : false
   }
 }
 ```
 
-This will make sure that the values are set to the optimal values based on the chosen tier.
+This will make sure that the values are set to the optimal values based on the chosen SKU.
 
 A convenient way to pass many parameter values to a deployment is to create a separate parameter file. This is done using a `.tfvars` file that contains all parameters that you want to pass to the deployment, along with the values for them.
 
@@ -530,7 +531,6 @@ To set the desired values in the `.tfvars` file, just add the following
 
 ```
 project_name = "TerraformLab"
-app_service_plan_tier = "Free"
 app_service_plan_sku = "F1"
 ```
 
@@ -554,11 +554,11 @@ as you didn't actually make any changes. You only refactored the code to be a bi
 
 ## Storing and accessing secrets with Azure KeyVault
 
-Before you set up the SQL Server resources, you are going to create an Azure KeyVault to store sensitive information. In this case it will store a single one secret that will be used by the application.
+Before you set up the SQL Server resources, you are going to create an Azure Key Vault to store sensitive information. In this case it will store a single one secret that will be used by the application.
 
 Add an `azurerm_key_vault` resource called __kv__ to the __main.tf__ file and set the following properties
 
-* `name` - "${local.project_name}-kv-${local.suffix}"
+* `name` - "\${local.project_name}-kv-${local.suffix}"
 * `location` - same as the resource group
 * `resource_group_name` - the name of the resource group
 * `sku_name` - "standard"
@@ -567,14 +567,14 @@ It should look like this
 
 ```
 resource "azurerm_key_vault" "kv" {
-  name = "${local.project_name}-kv-${local.suffix}"
-  location = azurerm_resource_group.rg.location
+  name                = "${local.project_name}-kv-${local.suffix}"
+  location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  sku_name = "standard"
+  sku_name            = "standard"
 }
 ```
 
-The KeyVault also needs the tenant id of the Azure AD tenant that should be used for access control. In this case, this should be the same tenant that the current user is coming from. To get hold of that, Terraform has a _data source_ type called `azurerm_client_config`. 
+The Key Vault also needs the tenant ID of the Azure AD tenant that should be used for access control. In this case, this should be the same tenant that the current user is coming from. To get hold of that, Terraform has a _data source_ type called `azurerm_client_config`. 
 
 Data sources are Terraform entities used to retrieve information from somewhere for use in the template. In this case, the thing you want to retrieve is the current Azure client configuration, which is available through the `azurerm_client_config` type. 
 
@@ -586,7 +586,7 @@ To get hold of the required information, you should create a data source that lo
 data "azurerm_client_config" "current" {}
 ```
 
-You should then set the `tenant_id` property of the `azurerm_key_vault` resource to the data source's `tenant_id`. To read values from the data source, you use the same "dot notation" as for other resources, but you need to prefix it with data, for example `data.azurerm_client_config.current.tenant_id`. In the end, you should en up with the following
+You should then set the `tenant_id` property of the `azurerm_key_vault` resource to the data source's `tenant_id`. To read values from the data source, you use the same "dot notation" as for other resources, but you need to prefix it with data, for example `data.azurerm_client_config.current.tenant_id`. In the end, you should end up with the following
 
 ```
 resource "azurerm_key_vault" "kv" {
@@ -600,9 +600,9 @@ resource "azurerm_key_vault" "kv" {
 
 __Note:__ You can find out about the `azurerm_key_vault` resource at: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault
 
-With the KeyVault in place, you can turn your focus towards adding the KeyVault secret that the application needs. 
+With the Key Vault in place, you can turn your focus towards adding the Key Vault secret that the application needs. 
 
-To create a KeyVault secret, you need a new resource of the type `azurerm_key_vault_secret`. And you only need to set the following 3 properties 
+To create a Key Vault secret, you need a new resource of the type `azurerm_key_vault_secret`. And you only need to set the following 3 properties 
 
 * `name` - testSecret
 * `value` - secretValue
@@ -618,7 +618,7 @@ resource "azurerm_key_vault_secret" "secret" {
 }
 ```
 
-Now that you have the KeyVault and secret in place, you can try deploying the infrastructure again by running
+Now that you have the Key Vault and secret in place, you can try deploying the infrastructure again by running
 
 ```bash
 > terraform apply
@@ -632,11 +632,11 @@ Unfortunately, this fails with the error
 
 __Note:__ Yes, this is abbreviated, but contains the most important parts.
 
-This error message is telling you that the user responsible for running Terraform (you) do not have permission to read the secrets in the vault. A permission that is required when managing KeyVault secrets from Terraform.
+This error message is telling you that the user responsible for running Terraform (you) do not have permission to read the secrets in the vault. A permission that is required when managing Key Vault secrets from Terraform.
 
-To solve this, you need to add an access policy that allows the current user to access the KeyVault secrets.
+To solve this, you need to add an access policy that allows the current user to access the Key Vault secrets.
 
-To create an access policy, you need to add an `access_policy` child block to the KeyVault resource. The policy needs the tenant ID and the object ID of the identity that is to be affected by this policy. In this case, that's the user currently executing the script, which is available through the `azurerm_client_config` data source called __current__.
+To create an access policy, you need to add an `access_policy` child block to the Key Vault resource. The policy needs the tenant ID and the object ID of the identity that is to be affected by this policy. In this case, that's the user currently executing the script, which is available through the `azurerm_client_config` data source called __current__.
 
 To configure the access policy, you need to set the following properties
 
@@ -647,7 +647,7 @@ __Note:__ Remember that the __azurerm_client_config.current__ is a data source, 
 
 You also need to configure the access policy to give the identity _Get_, _List_, _Set_ and _Delete_ permissions for secrets. This is done by setting the `access_policy`'s `secret_permissions` property to a string array containing the "Get", "List", "Set", "Delete", "Purge" and "Recover" strings.
 
-__Warning:__ "Purge" and "Recover", has to do with KeyVault using a "soft deleted" paradigm to make sure secrets are deleted by mistake. By adding these 2 permissions, Terraform can properly handle this. 
+__Warning:__ "Purge" and "Recover", has to do with Key Vault using a "soft deleted" paradigm to make sure secrets are deleted by mistake. By adding these 2 permissions, Terraform can properly handle this. 
 
 In the end, you should end up with something that looks like this
 
@@ -670,7 +670,7 @@ resource "azurerm_key_vault" "kv" {
 }
 ```
 
-This allows the current user to access the KeyVault, however, that is only useful during deployment. When the app is running, the access will be done by the web app's system assigned managed identity. Because of this, you also need to add an access policy that allows the web app to read the secrets in the KeyVault. This is done by adding a __second__ `access_policy` block to the KeyVault resource. In this case, the `tenant_id` and `object_id` should be set to the web app's system assigned managed identity, which is available as the first item in the `azurerm_app_service.app.identity` array. 
+This allows the current user to access the Key Vault, however, that is only useful during deployment. When the app is running, the access will be done by the web app's system assigned managed identity. Because of this, you also need to add an access policy that allows the web app to read the secrets in the Key Vault. This is done by adding a __second__ `access_policy` block to the Key Vault resource. In this case, the `tenant_id` and `object_id` should be set to the web app's system assigned managed identity, which is available as the first item in the `azurerm_linux_web_app.app.identity` array. 
 
 You should also limit the permissions to `Get` and `List` for secrets.
 
@@ -680,8 +680,8 @@ This means creating a block that looks like this
 resource "azurerm_key_vault" "kv" {
   ...
   access_policy {
-    tenant_id = azurerm_app_service.app.identity[0].tenant_id
-    object_id = azurerm_app_service.app.identity[0].principal_id
+    tenant_id = azurerm_linux_web_app.app.identity[0].tenant_id
+    object_id = azurerm_linux_web_app.app.identity[0].principal_id
 
     secret_permissions = [
       "Get",
@@ -691,10 +691,10 @@ resource "azurerm_key_vault" "kv" {
 }
 ```
 
-With the KeyVault and the correct permissions in place, you need to tell the web app the name of the KeyVault so it knows where to look for it. For this, the app expects an app setting called __KeyVaultName__ to contain the name of the KeyVault. Unfortunately, the KeyVault resource already has a reference to the web app, so adding a reference from the web app to the KeyVault would cause a cyclic dependency. Because of this, you have to set the value "manually", using the same string as the KeyVault resource is using. Like this
+With the Key Vault and the correct permissions in place, you need to tell the web app the name of the Key Vault so it knows where to look for it. For this, the app expects an app setting called __KeyVaultName__ to contain the name of the Key Vault. Unfortunately, the Key Vault resource already has a reference to the web app, so adding a reference from the web app to the Key Vault would cause a cyclic dependency. Because of this, you have to set the value "manually", using the same string as the Key Vault resource is using. Like this
 
 ```
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   ...
   app_settings = {
     ...
@@ -704,16 +704,19 @@ resource "azurerm_app_service" "app" {
 }
 ```
 
-__Note:__ A better solution might be to create a local so you don't end up with a change to one but not the other. But to keep it simple, you will handle it like this in this lab.
+__Note:__ A better solution might be to create a "local", so you don't end up with a change to one but not the other. But to keep it simple, you will handle it like this in this lab.
 
 Now, you can try deploying the infrastructure again using
 
 ```bash
 > terraform apply
 ```
+
 Once that is done, you can try to refresh the web app in the browser to verify that it can successfully read the secret from the vault now.
 
 ![image](./images/website-2.png)
+
+__Note:__ You might have to wait a little while before the application restarts, and your changes are visible
 
 ## Add SQL storage
 
@@ -739,7 +742,7 @@ __Note:__ You can find more information about the `random_password` at: https://
 
 With the password set up, you can carry on with the creation of the SQL Server instance. For this, you will need a new resource of the type `azurerm_mssql_server` called __sql_server__. The properties you need to set for this resource are
 
-* name - "${local.project_name}-sql-${local.suffix}"
+* name - "\${local.project_name}-sql-${local.suffix}"
 * location - the same location as the resource group resource
 * resource_group_name - the same as the resource group resource
 * version - "12.0"
@@ -781,20 +784,20 @@ resource "azurerm_mssql_database" "db" {
 }
 ```
 
-Now you have the web app and the database defined, but you still need to make sure that the web app can talk to the database. This requires three things, a connection string for the web app to use, the necessary permissions for the the web app's assigned identity to access the database, and that the firewall to the SQL Server is opened to allow traffic to access it. Let's start with the connection string. 
+Now you have the web app and the database defined, but you still need to make sure that the web app can talk to the database. This requires three things, a connection string for the web app to use, the necessary permissions for the web app's assigned identity to access the database, and that the firewall to the SQL Server is opened to allow traffic to access it. Let's start with the connection string. 
 
 To add a connection string setting to the web app, you need to add a `connection_string` block to the web app. The `connection_string` block should contain 3 properties that you need to set
 
 * name - "infradb"
 * type - "SQLAzure"
-* value - "Data Source=tcp:${local.project_name}-sql-${local.suffix}.database.windows.net,1433;Initial Catalog=infradb;Authentication=Active Directory Interactive;"
+* value - "Data Source=tcp:\${local.project_name}-sql-${local.suffix}.database.windows.net,1433;Initial Catalog=infradb;Authentication=Active Directory Interactive;"
 
 Unfortunately, you cannot use references to the SQL Server and database resources when creating the connection string as this would cause a cyclic dependency chain when setting up the web app access. So you will just have to manually create the dynamic connection string values, like the host name of the server.
 
 So the end result becomes this
 
 ```
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   ...
   connection_string {
     name = "infradb"
@@ -804,16 +807,16 @@ resource "azurerm_app_service" "app" {
 }
 ```
 
-__Note:__ If you need more than one connection string, you can add multiple `connection_string` blocks to the `azurerm_app_service` resource
+__Note:__ If you need more than one connection string, you can add multiple `connection_string` blocks to the `azurerm_linux_web_app` resource
 
 The second part is to give the web app's assigned identity access to the database. In this case, you will do this by making it the Active Directory admin of the Azure SQL Server.
 
-__Warning:__ It is not recommended to make an app's managed identity the SQL Server admin as it will give full access to the entire server. However, for the sake of simplicity, this is what you will be doing in this lab. In a real world scenario you should create and use a less privileged SQL Server user for the identity.
+__Warning:__ It is not recommended making an app's managed identity the SQL Server admin as it will give full access to the entire server. However, for the sake of simplicity, this is what you will be doing in this lab. In a real world scenario you should create and use a less privileged SQL Server user for the identity.
 
 To set the SQL Server's Azure AD administrator, you need to add a `azuread_administrator` block to the `azurerm_mssql_server` resource. The `azuread_administrator` contains only 2 properties that you need to set
 
 * `login_username` - the SQL Server login name for the Azure AD administrator, in this case the name of the Web App
-* `object_id` - the Azure AD object ID for the Azure AD account to use, in this case the `principal_id` of the first entry in the `azurerm_app_service.app.identity` list
+* `object_id` - the Azure AD object ID for the Azure AD account to use, in this case the `principal_id` of the first entry in the `azurerm_linux_web_app.app.identity` list
 
 It should look like this
 
@@ -822,8 +825,8 @@ resource "azurerm_mssql_server" "sql_server" {
   ...
 
   azuread_administrator {
-    login_username = azurerm_app_service.app.name
-    object_id = azurerm_app_service.app.identity[0].principal_id
+    login_username = azurerm_linux_web_app.app.name
+    object_id = azurerm_linux_web_app.app.identity[0].principal_id
   }
 }
 ```
@@ -859,7 +862,7 @@ The first step is to add the Log Analytics Workspace. And as usual, that require
 
 As you will use the default settings for most of the available configuration for this resource, you only need to set the following properties
 
-* name - "${local.project_name}-laws-${local.suffix}"
+* name - "\${local.project_name}-laws-${local.suffix}"
 * location - the same location as the resource group
 * resource_group_name - the name of the resource group
 
@@ -877,7 +880,7 @@ __Note:__ If you want to know what other configurations you can do to the worksp
 
 With the storage in place, you can go ahead and add a `azurerm_application_insights` resource, setting the following properties
 
-* name - "${local.project_name}-ai-${local.suffix}"
+* name - "\${local.project_name}-ai-${local.suffix}"
 * location - the same location as the resource group
 * resource_group_name - the name of the resource group
 * workspace_id - the ID of the __laws__ workspace resource
@@ -907,14 +910,14 @@ The final step in the addition of the Application Insights monitoring is to conn
 Like this
 
 ```
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   ...
   app_settings = {
     ...
-    APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.ai.instrumentation_key
-    APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.ai.connection_string
+    APPINSIGHTS_INSTRUMENTATIONKEY             = azurerm_application_insights.ai.instrumentation_key
+    APPLICATIONINSIGHTS_CONNECTION_STRING      = azurerm_application_insights.ai.connection_string
     ApplicationInsightsAgent_EXTENSION_VERSION = "~3"
-    XDT_MicrosoftApplicationInsights_Mode = "recommended"
+    XDT_MicrosoftApplicationInsights_Mode      = "recommended"
   }
 }
 ```
@@ -937,11 +940,11 @@ output "<OUTPUT NAME>" {
 }
 ```
 
-In this case, you want to output the address to the web app. This is sort of available through the `default_site_hostname` property of the `azurerm_app_service` resource. However, that contains only the host name. If you want to output the URL, you will need to do some string manipulation like this
+In this case, you want to output the address to the web app. This is sort of available through the `default_hostname` property of the `azurerm_linux_web_app` resource. However, that contains only the host name. If you want to output the URL, you will need to do some string manipulation like this
 
 ```
 output "website_address" {
-  value = "https://${azurerm_app_service.app.default_site_hostname}/"
+  value = "https://${azurerm_linux_web_app.app.default_hostname}/"
 }
 ```
 
@@ -963,17 +966,17 @@ or, if you want to get rid of the double quotes around it (which is often useful
 https://terraformlab-web-XXXXXXX.azurewebsites.net/
 ```
 
-__Note:__ There are a couple of more settings you can add to your outputs, such as whether or not it is `sensitive`. You can find out all about that at: https://www.terraform.io/docs/language/values/outputs.html
+__Note:__ There are a couple of more settings you can add to your outputs, such as whether it is `sensitive` or not. You can find out all about that at: https://www.terraform.io/docs/language/values/outputs.html
 
 ## Removing the infrastructure
 
-Once you are done with the infrastructure you hae set up, you can tear it all down by simply executing
+Once you are done with the infrastructure you have set up, you can tear it all down by simply executing
 
 ```bash
 > terraform destroy
 ```
 
-and confirming the removal of the resource by entering __yes__ and pressing enter when asked.
+and confirming the removal of the resource by entering __yes__, and pressing enter when asked.
 
 __Note__: Do not skip this step if you wish to do the Lab Extension bellow.
 
@@ -985,7 +988,7 @@ A module is basically a group of resources bundled together, allowing you to re-
 
 The first step in the process of creating this module, is to create a sub-folder called __web-app__. Inside this folder, you should create a new file called __main.tf__. 
 
-Once you have the module folder, and the __main.tf__ file, you can go ahead and move the `azurerm_app_service` and `azurerm_application_insights` resources into the new file.
+Once you have the module folder, and the __main.tf__ file, you can go ahead and move the `azurerm_linux_web_app` and `azurerm_application_insights` resources into the new file.
 
 This causes some problems, as the resources are referring to other resources that are not available inside the module. To solve this, you use input parameters, just as you did in the root module. So go ahead and create an __inputs.tf__ file inside the __web-app__ folder.
 
@@ -1023,7 +1026,7 @@ variable "app_service_plan_id" {
   type = string
 }
 
-variable "app_service_plan_tier" {
+variable "app_service_plan_sku" {
   type = string
 }
 
@@ -1046,7 +1049,7 @@ variable "log_analytics_workspace_id" {
 ```
 __Note:__ You can also use a couple of `object` parameters instead, which would allow you to group the values together. If you are interested in trying this, have a look at: https://www.terraform.io/docs/language/expressions/types.html
 
-With the inputs in place, you can update the `azurerm_app_service` and `azurerm_application_insights` resources by replacing all referenced values that are not available, with the input values using the `var.<INPUT NAME>` syntax. You also need to replace the names of the resources with the `web_name` and `ai_name` inputs.
+With the inputs in place, you can update the `azurerm_linux_web_app` and `azurerm_application_insights` resources by replacing all referenced values that are not available, with the input values using the `var.<INPUT NAME>` syntax. You also need to replace the names of the resources with the `web_name` and `ai_name` inputs.
 
 Now that you have broken out these resources into their own module, you will need to reference that module from the root module. This is done using the following syntax
 
@@ -1061,37 +1064,37 @@ So in this case, you need to add the following to your root main.tf file
 
 ```
 module "web" {
-  source = "./web-app"
-  web_name = "${var.project_name}-web-${local.suffix}"
-  ai_name = "${var.project_name}-ai-${local.suffix}"
-  location = azurerm_app_service_plan.plan.location
-  resource_group_name = azurerm_app_service_plan.plan.resource_group_name
-  app_service_plan_id = azurerm_app_service_plan.plan.id
-  app_service_plan_tier = var.app_service_plan_tier
-  key_vault_name = "${local.project_name}-kv-${local.suffix}"
-  sql_server_domain_name = "${local.project_name}-sql-${local.suffix}"
-  db_name = "infradb"
+  source                     = "./web-app"
+  web_name                   = "${local.project_name}-web-${local.suffix}"
+  ai_name                    = "${local.project_name}-ai-${local.suffix}"
+  location                   = azurerm_service_plan.plan.location
+  resource_group_name        = azurerm_service_plan.plan.resource_group_name
+  app_service_plan_id        = azurerm_service_plan.plan.id
+  app_service_plan_sku       = var.app_service_plan_sku
+  key_vault_name             = "${local.project_name}-kv-${local.suffix}"
+  sql_server_domain_name     = "${local.project_name}-sql-${local.suffix}"
+  db_name                    = "infradb"
   log_analytics_workspace_id = azurerm_log_analytics_workspace.laws.id
 }
 ```
 
-__Note:__ Once again you cannot use a reference to the SQL Server or KeyVault, as it would cause a cyclic dependencies. Instead, you will have to concatenate the values "manually".
+__Note:__ Once again you cannot use a reference to the SQL Server or Key Vault, as it would cause cyclic dependencies. Instead, you will have to concatenate the values "manually".
 
 __Comment:__ In this case, it might be a better idea to use a couple of `locals` for the names, instead of hard coding them and having duplicate code. However, for simplicity, this lab uses duplicated strings.
 
-There are still 3 outstanding issues that you need to fix though. The first two are related to the fact that the web app resource is now in the module, causing issues when setting the SQL Server AD Admin account, and when KeyVault access policy for the web app identity. To solve this, you need to add an output from the module for the web app's identity, and one for the web apps name in the web-app/main.tf file. Like this
+There are still 3 outstanding issues that you need to fix though. The first two are related to the fact that the web app resource is now in the module, causing issues when setting the SQL Server AD Admin account, and when Key Vault access policy for the web app identity. To solve this, you need to add an output from the module for the web app's identity, and one for the web apps name in the web-app/main.tf file. Like this
 
 ```
 output "web_app_name" {
-  value = azurerm_app_service.app.name
+  value = azurerm_linux_web_app.app.name
 }
 
 output "web_app_identity" {
-  value = azurerm_app_service.app.identity[0]
+  value = azurerm_linux_web_app.app.identity[0]
 }
 ```
 
-and then update the SQL Server AD Admin assignment and KeyVault access policy to use that output value instead.
+and then update the SQL Server AD Admin assignment and Key Vault access policy to use that output value instead.
 
 The syntax for getting the value of an output from a module is `module.<MODULE NAME>.<OUTPUT NAME>`. So in this case you end up with
 
@@ -1122,7 +1125,7 @@ output "website_address" {
 }
 ```
 
-However, before you can redeploy the infrastructure, you do need to run `terraform init`. Otherwise Terraform won't know that there is a module that you can use.
+However, before you can redeploy the infrastructure, you do need to run `terraform init`. Otherwise, Terraform won't know that there is a module that you can use.
 
 Once Terraform has been re-initialized, you should be able to re-deploy the infrastructure. Terraform will decide that there are a couple of resources that need to be destroyed, and a couple that need to be created. The reason for this is that Terraform sees the resources inside the module as new resources, and the once that were previously in the root are now gone, so they need to be deleted.
 

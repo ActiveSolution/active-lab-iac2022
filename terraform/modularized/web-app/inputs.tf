@@ -18,7 +18,7 @@ variable "app_service_plan_id" {
   type = string
 }
 
-variable "app_service_plan_tier" {
+variable "app_service_plan_sku" {
   type = string
 }
 

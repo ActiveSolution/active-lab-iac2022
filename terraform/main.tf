@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.65"
+      version = "=3.34.0"
     }
   }
 }
@@ -11,24 +11,17 @@ provider "azurerm" {
   features {}
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_resource_group" "rg" {
   name     = var.project_name
   location = "westeurope"
 }
 
-resource "azurerm_app_service_plan" "plan" {
+resource "azurerm_service_plan" "plan" {
   name                = "${local.project_name}-plan"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  kind                = "linux"
-  reserved            = true
-
-  sku {
-    tier = var.app_service_plan_tier
-    size = var.app_service_plan_sku
-  }
+  os_type             = "Linux"
+  sku_name            = var.app_service_plan_sku
 }
 
 resource "random_string" "suffix" {
@@ -41,22 +34,25 @@ locals {
   project_name = lower(var.project_name)
 }
 
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   name                = "${local.project_name}-web-${local.suffix}"
-  location            = azurerm_app_service_plan.plan.location
-  resource_group_name = azurerm_app_service_plan.plan.resource_group_name
-  app_service_plan_id = azurerm_app_service_plan.plan.id
+  location            = azurerm_service_plan.plan.location
+  resource_group_name = azurerm_service_plan.plan.resource_group_name
+  service_plan_id     = azurerm_service_plan.plan.id
 
   site_config {
-    linux_fx_version          = "DOCKER|iacworkshop.azurecr.io/infrawebapp:v1"
-    always_on                 = lower(var.app_service_plan_tier) == "free" ? false : true
-    use_32_bit_worker_process = lower(var.app_service_plan_tier) == "free" ? true : false
+    application_stack {
+      docker_image     = "iacworkshop.azurecr.io/infrawebapp"
+      docker_image_tag = "v1"
+    }
+    always_on         = startswith(lower(var.app_service_plan_sku), "f") ? false : true
+    use_32_bit_worker = startswith(lower(var.app_service_plan_sku), "f") ? true : false
   }
 
   app_settings = {
     DOCKER_REGISTRY_SERVER_URL                 = "https://iacworkshop.azurecr.io"
-    DOCKER_REGISTRY_SERVER_USERNAME            = "iacworkshop",
-    DOCKER_REGISTRY_SERVER_PASSWORD            = "XXX"
+    DOCKER_REGISTRY_SERVER_USERNAME            = "iacworkshop"
+    DOCKER_REGISTRY_SERVER_PASSWORD            = "XXXXXXXXXXXX"
     KeyVaultName                               = "${local.project_name}-kv-${local.suffix}"
     APPINSIGHTS_INSTRUMENTATIONKEY             = azurerm_application_insights.ai.instrumentation_key
     APPLICATIONINSIGHTS_CONNECTION_STRING      = azurerm_application_insights.ai.connection_string
@@ -64,14 +60,14 @@ resource "azurerm_app_service" "app" {
     XDT_MicrosoftApplicationInsights_Mode      = "recommended"
   }
 
-  identity {
-    type = "SystemAssigned"
-  }
-
   connection_string {
     name  = "infradb"
     type  = "SQLAzure"
     value = "Data Source=tcp:${local.project_name}-sql-${local.suffix}.database.windows.net,1433;Initial Catalog=infradb;Authentication=Active Directory Interactive;"
+  }
+
+  identity {
+    type = "SystemAssigned"
   }
 }
 
@@ -97,8 +93,8 @@ resource "azurerm_key_vault" "kv" {
   }
 
   access_policy {
-    tenant_id = azurerm_app_service.app.identity[0].tenant_id
-    object_id = azurerm_app_service.app.identity[0].principal_id
+    tenant_id = azurerm_linux_web_app.app.identity[0].tenant_id
+    object_id = azurerm_linux_web_app.app.identity[0].principal_id
 
     secret_permissions = [
       "Get",
@@ -106,6 +102,8 @@ resource "azurerm_key_vault" "kv" {
     ]
   }
 }
+
+data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault_secret" "secret" {
   name         = "testSecret"
@@ -127,8 +125,8 @@ resource "azurerm_mssql_server" "sql_server" {
   administrator_login_password = random_password.sql_admin_password.result
 
   azuread_administrator {
-    login_username = azurerm_app_service.app.name
-    object_id      = azurerm_app_service.app.identity[0].principal_id
+    login_username = azurerm_linux_web_app.app.name
+    object_id      = azurerm_linux_web_app.app.identity[0].principal_id
   }
 }
 
@@ -162,5 +160,5 @@ resource "azurerm_application_insights" "ai" {
 }
 
 output "website_address" {
-  value = "https://${azurerm_app_service.app.default_site_hostname}/"
+  value = "https://${azurerm_linux_web_app.app.default_hostname}/"
 }
