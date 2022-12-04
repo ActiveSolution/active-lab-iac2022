@@ -277,7 +277,7 @@ resource "azurerm_linux_web_app" "app" {
   app_settings = {
     DOCKER_REGISTRY_SERVER_URL = "https://iacworkshop.azurecr.io"
     DOCKER_REGISTRY_SERVER_USERNAME = "iacworkshop"
-    DOCKER_REGISTRY_SERVER_PASSWORD = "XXXXXXXXXXXX"
+    DOCKER_REGISTRY_SERVER_PASSWORD = "XXX"
   }
 }
 ```
@@ -365,7 +365,7 @@ resource "azurerm_linux_web_app" "app" {
   app_settings = {
     DOCKER_REGISTRY_SERVER_URL      = "https://iacworkshop.azurecr.io"
     DOCKER_REGISTRY_SERVER_USERNAME = "iacworkshop"
-    DOCKER_REGISTRY_SERVER_PASSWORD = "XXXXXXXXXXXX"
+    DOCKER_REGISTRY_SERVER_PASSWORD = "XXX"
   }
 
   identity {

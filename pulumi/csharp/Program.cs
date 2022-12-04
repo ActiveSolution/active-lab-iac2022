@@ -158,7 +158,7 @@ return await Pulumi.Deployment.RunAsync(async () =>
         Properties = {
             { "DOCKER_REGISTRY_SERVER_URL", "https://iacworkshop.azurecr.io" },
             { "DOCKER_REGISTRY_SERVER_USERNAME", "iacworkshop" },
-            { "DOCKER_REGISTRY_SERVER_PASSWORD", "JtA75wA31qqzawrPyOiC/bSr6y5whHIC" },
+            { "DOCKER_REGISTRY_SERVER_PASSWORD", "XXX" },
             { "KeyVaultName", kv.Name },
             { "APPINSIGHTS_INSTRUMENTATIONKEY", ai.InstrumentationKey },
             { "APPLICATIONINSIGHTS_CONNECTION_STRING", ai.ConnectionString },

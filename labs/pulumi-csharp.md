@@ -831,7 +831,7 @@ new WebAppApplicationSettings("AppSettings", new() {
     Properties = {
         { "DOCKER_REGISTRY_SERVER_URL", "https://iacworkshop.azurecr.io" },
         { "DOCKER_REGISTRY_SERVER_USERNAME", "iacworkshop" },
-        { "DOCKER_REGISTRY_SERVER_PASSWORD", "JtA75wA31qqzawrPyOiC/bSr6y5whHIC" }
+        { "DOCKER_REGISTRY_SERVER_PASSWORD", "XXX" }
     }
 }, new() { Parent = app });
 ```
@@ -1329,7 +1329,7 @@ public WebAppWithApplicationInsights(string name, WebAppWithApplicationInsightsA
         Properties = {
             { "DOCKER_REGISTRY_SERVER_URL", "https://iacworkshop.azurecr.io" },
             { "DOCKER_REGISTRY_SERVER_USERNAME", "iacworkshop" },
-            { "DOCKER_REGISTRY_SERVER_PASSWORD", "JtA75wA31qqzawrPyOiC/bSr6y5whHIC" },
+            { "DOCKER_REGISTRY_SERVER_PASSWORD", "XXX" },
             { "KeyVaultName", kv.Name },
             { "APPINSIGHTS_INSTRUMENTATIONKEY", ai.InstrumentationKey },
             { "APPLICATIONINSIGHTS_CONNECTION_STRING", ai.ConnectionString },
@@ -1367,7 +1367,7 @@ public WebAppWithApplicationInsights(string name, WebAppWithApplicationInsightsA
         Properties = {
             { "DOCKER_REGISTRY_SERVER_URL", "https://iacworkshop.azurecr.io" },
             { "DOCKER_REGISTRY_SERVER_USERNAME", "iacworkshop" },
-            { "DOCKER_REGISTRY_SERVER_PASSWORD", "JtA75wA31qqzawrPyOiC/bSr6y5whHIC" },
+            { "DOCKER_REGISTRY_SERVER_PASSWORD", "XXX" },
             // { "KeyVaultName", kv.Name },
             { "APPINSIGHTS_INSTRUMENTATIONKEY", ai.InstrumentationKey },
             { "APPLICATIONINSIGHTS_CONNECTION_STRING", ai.ConnectionString },
@@ -1522,7 +1522,7 @@ public class WebAppWithApplicationInsights : ComponentResource
         this.appSettings = new InputMap<string> {
                 { "DOCKER_REGISTRY_SERVER_URL", "https://iacworkshop.azurecr.io" },
                 { "DOCKER_REGISTRY_SERVER_USERNAME", "iacworkshop" },
-                { "DOCKER_REGISTRY_SERVER_PASSWORD", "JtA75wA31qqzawrPyOiC/bSr6y5whHIC" },
+                { "DOCKER_REGISTRY_SERVER_PASSWORD", "XXX" },
                 { "APPINSIGHTS_INSTRUMENTATIONKEY", ai.InstrumentationKey },
                 { "APPLICATIONINSIGHTS_CONNECTION_STRING", ai.ConnectionString },
                 { "ApplicationInsightsAgent_EXTENSION_VERSION", "~3" },

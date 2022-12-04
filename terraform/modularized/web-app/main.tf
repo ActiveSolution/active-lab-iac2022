@@ -16,7 +16,7 @@ resource "azurerm_linux_web_app" "app" {
   app_settings = {
     DOCKER_REGISTRY_SERVER_URL                 = "https://iacworkshop.azurecr.io"
     DOCKER_REGISTRY_SERVER_USERNAME            = "iacworkshop"
-    DOCKER_REGISTRY_SERVER_PASSWORD            = "XXXXXXXXXXXX"
+    DOCKER_REGISTRY_SERVER_PASSWORD            = "XXX"
     KeyVaultName                               = var.key_vault_name
     APPINSIGHTS_INSTRUMENTATIONKEY             = azurerm_application_insights.ai.instrumentation_key
     APPLICATIONINSIGHTS_CONNECTION_STRING      = azurerm_application_insights.ai.connection_string
