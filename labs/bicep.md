@@ -62,6 +62,7 @@ Create a new folder for your bicep project and open the folder in Visual Studio 
 ## Azure App Service
 To run a web application on Azure App Service, you need an app service plan and an app service. In this lab, you will deploy an existing, containerized, web application that will help you validate the infrastructure as you deploy it along the way.
 
+**Create the App Service Plan**  
 To create the app service plan, typ in the newly created file in visual studio *res-app-plan*, you will see a tooltip, hit ENTER and it will autofill for you. This uses one of the code snippets available in the Bicep extension for Visual Studio Code. Now we need to give the plan a name, and specify that it should be running on Linux.
 
 ![image](https://user-images.githubusercontent.com/847244/136973195-60581077-e20f-4c83-8054-059bf1a0c600.png)
@@ -92,6 +93,10 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
 }
 ```
 
+> **Note**
+> You will probably see a warning which states that the location should be passed in as a parameter. We will fix this later in the lab
+
+**Create the App Service**  
 Azure App Services are deployed in the global _.azurewebsites.net_ domain and therefor we need to give it a globally unique name. To do this, we'll add a variable that will generate a unique name for us.
 
 Add this to the top of the file.
@@ -99,7 +104,8 @@ Add this to the top of the file.
 ```bicep
 var webAppName = 'webapp${uniqueString(resourceGroup().id)}'
 ```
-uniqueString will generate a deterministic hash string based on the input. This means that it will return the same output value every time, if we call it with the same input value. In this case we pass the id of the our resource group. Since that will not change over the lifetime of the resource group, we will get the same name for the app service every time. Read more about the uniqueString template functiom here: https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/template-functions-string#uniquestring
+> **Note**
+> uniqueString will generate a deterministic hash string based on the input. This means that it will return the same output value every time, if we call it with the same input value. In this case we pass the id of the our resource group. Since that will not change over the lifetime of the resource group, we will get the same name for the app service every time. Read more about the uniqueString template functiom here: https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/template-functions-string#uniquestring
 
 Now, create the app service by using the snippets again by typing *res-web-app* and hit ENTER.
 
@@ -113,6 +119,8 @@ Now, create the app service by using the snippets again by typing *res-web-app* 
     serverFarmId: appServicePlan.id
   }
   ```
+* Change location to 'resourceGroup().location'
+
 * Specify that the app service should use a managed identity, by adding in _identity_ section to the resource (https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet).
   ```bicep
     identity: {
@@ -219,6 +227,13 @@ sku: {
   }
 ```
 
+  Let's also get rid of the warning about the location by adding another parameter for location:
+
+  ```bicep
+  param location string
+```
+  replace the usage of resouceGroup().location with the new parameter instead
+  
 A convenient way to pass the parameter values to a deployment is to create a separate parameter file. This is a JSON file that contains all parameters that you want to pass with the corresponding value.
 
 Add a new file called *template.parameters.json* to the same folder as the template.bicep file, and paste in the following code:
@@ -231,7 +246,8 @@ Add a new file called *template.parameters.json* to the same folder as the templ
     "parameters": {
         "appServicePlanSku": {
             "value": "F1"
-        }
+        },
+        "location": "westeurope"
     }
 }
 ```
