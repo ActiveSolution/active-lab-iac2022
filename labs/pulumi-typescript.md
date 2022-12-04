@@ -7,7 +7,7 @@ Welcome to the Pulumi lab for the Infrastructure as Code workshop. In this lab, 
 * Azure SQL Server and a SQL database
 * Application Insights resource backed by a Log Analytics workspace
 
-## WARNING: Known issues
+## WARNING: Known Pulumi issues
 
 There are unfortunately known issues with this lab. 
 
@@ -18,6 +18,10 @@ There is also a known issue around setting the resource's parent. So, ignore all
 __Note:__ Another option is to use the [package.json](../pulumi/typescript/package.json) and [package-lock.json](../pulumi/typescript/package-lock.json) files from this repo, as these include references to older versions of Pulumi, that work as intended. Even if they are a bit on the slow side...
 
 Proceed with caution, there be dragons... ;)
+
+## WARNING: Known TypeScript/VS Code issues
+
+If your TypeScript engine keeps failing in VS Code, it might be because of a version mismatch. Try opening a TS-file, press Ctrl + P to open the command palette. Then select _TypeScript: Select TypeScript Version..._ > _Use Workspace Version_.
 
 ## Prerequisites
 
