@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as azure from "@pulumi/azure-native";
 import * as random from "@pulumi/random";
-import * as az from "@pulumi/azure";
+import * as insights from '@pulumi/azure-native/insights/v20200202';
 
 function getName(resourceType: string) {
     return `${pulumi.getProject().toLowerCase()}-${resourceType}-`
@@ -128,10 +128,11 @@ const laws = new azure.operationalinsights.Workspace(getName("laws"), {
     parent: resourceGroup
 });
 
-const ai = new az.appinsights.Insights(getName("ai"), {
+const ai = new insights.Component(getName("ai"), {
     resourceGroupName: resourceGroup.name,
-    workspaceId: laws.id,
-    applicationType: "web"
+    workspaceResourceId: laws.id,
+    applicationType: "web",
+    kind: "web"
 }, {
     parent: app
 });

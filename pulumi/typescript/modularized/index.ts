@@ -1,7 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as azure from "@pulumi/azure-native";
 import * as random from "@pulumi/random";
-import * as az from "@pulumi/azure";
 import { WebAppWithApplicationInsights } from "./web-app"
 
 function getName(resourceType: string) {

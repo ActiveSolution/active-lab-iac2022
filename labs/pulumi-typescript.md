@@ -1,24 +1,38 @@
-# Infrastructure as Code Labs - Pulumi
-Welcome to the Pulumi lab for the Infrastructure as Code workshop. In this lab, you will setup of the following infrastructure resources in Azure using Pulumi, and validate your deployed infrastructure using a pre-built web application along the way:
+# Infrastructure as Code Labs - Pulumi - TypeScript
+
+Welcome to the Pulumi lab for the Infrastructure as Code workshop. In this lab, you will set up of the following infrastructure resources in Azure using Pulumi, and validate your deployed infrastructure using a pre-built web application along the way:
 
 * Azure App Service running on Linux
 * Azure Key Vault for storing sensitive information, such as passwords
 * Azure SQL Server and a SQL database
 * Application Insights resource backed by a Log Analytics workspace
 
+## WARNING: Known issues
+
+There are unfortunately known issues with this lab. 
+
+Because Pulumi auto generates its SDK, with multiple Azure API versions, the TypeScript SDK tends to grow and become a bit hard to work with. Because of this, it is recommended to not import the full `@pulumi/azure-native` module as this lab suggests. Instead, import only the modules that you need, to keep the TypeScript compiler a bit more happy.
+
+There is also a known issue around setting the resource's parent. So, ignore all the `{ parent = X }` entries in this lab to make it work properly.
+
+__Note:__ Another option is to use the [package.json](../pulumi/typescript/package.json) and [package-lock.json](../pulumi/typescript/package-lock.json) files from this repo, as these include references to older versions of Pulumi, that work as intended. Even if they are a bit on the slow side...
+
+Proceed with caution, there be dragons... ;)
+
 ## Prerequisites
+
 To complete the lab you need to install the Pulumi tooling which include
 
 * Azure CLI
 * Visual Studio Code 
-* Node (Current or LTS)
+* Node (LTS)
 * Pulumi
 
 You can find the latest installation instructions for your environment here:
 
 * Azure CLI - https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
 * Visual Studio Code - https://code.visualstudio.com/download
-* Node  - https://nodejs.org/en/download/
+* Node - https://nodejs.org/en/download/
 * Pulumi - https://www.pulumi.com/docs/get-started/install/
 
 __Note:__ Pulumi can be installed using Chocolatey, which is a terrific way to do it. To install Chocolatey, have a look at: https://chocolatey.org/install
@@ -37,10 +51,10 @@ Once you have the tools installed, you can verify that the CLI parts are working
 }
 
 > pulumi version
-v3.13.2
+v3.48.0
 
 > node --version
-v14.18.0
+v18.12.1
 ```
 
 With the tools in place, you need to either log in to the Azure CLI, or, if you are already logged in, validate that you are using the correct subscription.
@@ -76,6 +90,7 @@ and select the subscription you want by running
 ```
 
 ## Setting up the project
+
 Create a new folder for you Pulumi project and open the folder in Visual Studio Code. 
 
 The first step is to "log in" Pulumi to tell it where to store its state. For this lab, you will store your state in the local folder, which you can tell Pulumi by opening up the terminal and executing
@@ -92,19 +107,15 @@ Once the state storage has been configured, you can start a new Pulumi project u
 > pulumi new azure-typescript
 ```
 
-This will ask you a a few questions that are used to set up the project. Use the following settings
+This will ask you a few questions that are used to set up the project. Use the following settings
 
 * project name - PulumiLab
 * project description - Leave as is by pressing Enter
 * stack name - Leave as __dev__ by pressing Enter
 * passphrase - this is used to protect the config. Choose a passphrase you will remember
-* Azure location - use what ever region is closest to you
+* Azure location - use whatever region is closest to you
 
-__Note:__ To get a list of all the regions you can run
-
-```batch
-> az account list-locations -o table
-```
+__Note:__ To get a list of all the regions you can run `az account list-locations -o table`
 
 This will create a brand new Pulumi project called __PulumiLab__, configured to use TypeScript and Node, and be set up to create resources in Azure. It will also run `npm install` to install the dependencies needed, so that when the command finishes, you are good to go.
 
@@ -118,9 +129,10 @@ You should end up with a file explorer, that looks like this
 
 ![image](./images/pulumi-folder.png)
 
-__Note:__ There are several more languages and "target" that can be managed using Pulumi, but for this lab it will be TypeScript and Azure.
+__Note:__ There are several more languages and "targets" that can be managed using Pulumi, but for this lab it will be TypeScript and Azure.
 
 ## Azure App Service
+
 To run a web application on Azure App Service, you need an app service plan and an app service. 
 
 However, before you can create these resources, you need a Resource Group to put it in. In Pulumi, that means creating an instance of `ResourceGroup`.
@@ -162,7 +174,7 @@ First up is the App Service Plan, which is defined using the `azure.web.AppServi
 * `resourceGroupName` - the `name` property of the resource group resource
 * `kind` - the string "linux"
 * `reserved` - has to be __true__ for a Linux plan
-* `sku` - and object with `name`, `size` and `tier` properties, set to __F1__, __F1__ and __Free__
+* `sku` - an object with `name`, `size` and `tier` properties, set to __F1__, __F1__ and __Free__
 
 Like this
 
@@ -194,7 +206,7 @@ What does this mean? Well, it means that the name you give the resource by using
 
 So if you were to deploy this to Azure, the resources would end up being named something like __PulumiLab7f9e86f8__, which is awesome for most resources, but not for all.
 
-For example, it's often nicer if the resource group is named without the suffix. Luckily, this is easily fixed by adding a __args__ parameter that sets the `resourceGroupName` property. Setting this property will override the auto-generated name.
+For example, it's often nicer if the resource group is named without the suffix. Luckily, this is easily fixed by adding an __args__ parameter that sets the `resourceGroupName` property. Setting this property will override the auto-generated name.
 
 ```typescript
 ...
@@ -216,7 +228,7 @@ function getName(resourceType: string) {
 }
 ```
 
-This uses the return value from the `pulumi.getProject()` method to retrieves the project name that you defined when you created the Pulumi project. This is then turned into lower-case, as some resource require the name to be lower-case letters only, before a separator, the resource type and another separator is appended to it.
+This uses the return value from the `pulumi.getProject()` method to retrieves the project name that you defined when you created the Pulumi project. This is then turned into lower-case, as some resources require the name to be lower-case letters only, before a separator, the resource type and another separator is appended to it.
 
 __Comment:__ The trailing dash (`-`) is there because Pulumi adds the suffix to the name without any separator.
 
@@ -360,17 +372,15 @@ const app = new azure.web.WebApp(getName("web"), {
 });
 ```
 
-The program is now at a point where you can try using 
+The program is now at a point where you can to use
 
 ```bash
 > pulumi up
 ```
 
-This command will output a definition of what resources it will create, and ask you whether or not to proceed, and if a passphrase was set, it will ask you for that.
+This command will output a definition of what resources it will create, and ask you whether to proceed or not, and if a passphrase was set, it will ask you for that.
 
-__Note:__ An interactive prompt like this is not a great solution for a non-interactive scenario like for example a deployment pipeline. In this scenarios, you can append `-y` to automatically approve the changes.
-
-If you set a passphrase, which is definitely recommended, then you should set PULUMI_CONFIG_PASSPHRASE in your environment. You might do this locally as part of your local development loop, or in your dev/prod environment (where you would be unable to type your passphrase in interactively). There will be more about this later in this lab.
+__Note:__ An interactive prompt like this is not a great solution for a non-interactive scenario like for example a deployment pipeline. In these scenarios, you can append `-y` to automatically approve the changes.
 
 The output should look something like this
 
@@ -393,8 +403,7 @@ Do you want to perform this update?  [Use arrows to move, enter to select, type 
 
 Select __no__ here, as there is one more thing to solve before doing the deployment.
 
-You might not notice it in this output, but resources in Pulumi have a logical hierarchy. In this case, there is no real hierarchy defined. All resources are considered children of the Pulumi stack. However, there is a logical hierarchy among the resources we have defined. The App Service Plan is "under" the Resource 
-Group. And the Web App is "under" the plan. This can be visualized in Pulumi by __adding__ a 3rd constructor parameter of type object, and setting its `parent` property to the parent object. Like this
+You might not notice it in this output, but resources in Pulumi have a logical hierarchy. In this case, there is no real hierarchy defined. All resources are considered children of the Pulumi stack. However, there is a logical hierarchy among the resources we have defined. The App Service Plan is "under" the Resource Group. And the Web App is "under" the plan. This can be visualized in Pulumi by __adding__ a 3rd constructor parameter of type object, and setting its `parent` property to the parent object. Like this
 
 ```typescript
 const appSvcPlan = new azure.web.AppServicePlan(getName("plan"), {
@@ -429,7 +438,6 @@ Do you want to perform this update?  [Use arrows to move, enter to select, type 
   details
 ```
 
-
 As you can see (if you compare it to the previous output), the resources are now treated as a hierarchy, which is just what we wanted.
 
 Go ahead and answer __yes__ to deploy the defined infrastructure.
@@ -448,17 +456,17 @@ To test the web app, you need to find out what hostname was assigned to it. To f
 > az webapp list -o table
 ```
 
-Locate your web app and browse to the URL shown in the *DefaultHostName* column
+Locate your web app and browse to the URL shown in the _DefaultHostName_ column
 
 ![image](./images/website-1.png)
 
 __Note:__ It can take a couple of minutes for the web app to come online
 
-## Parameterize template
+## Parameterize project
 
-Instead of hard coding various values in the template, such as the App Service Plan SKU, we can extract them into parameters that are stored "in" the stack, or the stack configuration. This allows us to create multiple stacks with different configuration, and use the same template to deploy to multiple environments based on the stack (dev, test, prod) with different configuration in each environment.
+Instead of hard coding various values in the project, such as the App Service Plan SKU, we can extract them into parameters that are stored "in" the stack, or the stack configuration. This allows us to create multiple stacks with different configuration, and use the same project to deploy to multiple environments based on the stack (dev, test, prod) with different configuration in each environment.
 
-Config variables are stored per stack in files called __Pulumi.<STACK_NAME>.yaml__. Inside these files, you will do two parts. First, you will see an `encryptionsalt` that is used to decode the content using the passphrase you have selected. Secondly, you will find a section called `config` that contains all the configuration for this stack. 
+Configuration variables are stored per stack in files called __Pulumi.<STACK_NAME>.yaml__. Inside these files, you will do two parts. First, you will see an `encryptionsalt` that is used to decode the content using the passphrase you have selected. Secondly, you will find a section called `config` that contains all the configuration for this stack. 
 
 Each config value is prefixed in some way. Local configurations are prefixed with the name of the current Pulumi project, __PulumiLab__ in this case. And all non-local variables are prefixed with the name of the package they belong to. 
 
@@ -472,7 +480,7 @@ config:
 
 You can ignore the `encryptionsalt`, and just look at the `azure-native:location` entry. As you can see, it is a config called `location`, used by the `azure-native` package, and the value is whatever Azure location you chose during the creation of the project.
 
-There are 2 ways to manage stack configuration values in Pulumi. The first one is to simply open the file __Pulumi.<STACK_NAME>.yaml__ file, and add a new line, or update an existing one, under the `config` section. For example, to set a local config called __appServicePlanTier__ to "Free", you can open the __Pulumi.dev.yaml__ file and update it so it looks like this
+There are 2 ways to manage stack configuration values in Pulumi. The first one is to simply open the file __Pulumi.<STACK_NAME>.yaml__ file, and add a new line, or update an existing one, under the `config` section. For example, to set a local config called __appServicePlanTier__ to "Free", you can open the __Pulumi.dev.yaml__ file and update it, so that it looks like this
 
 ```yaml
 encryptionsalt: v1:6XEI+gHtvAA=:v1:gMkU1KqRnYa71DOn:RIB07x/onWgMj3A+ZXt6fLrdjceB1Q==
@@ -487,11 +495,11 @@ The other way is to use the Pulumi CLI. To add a config called __appServicePlanS
 > pulumi config set appServicePlanSize F1
 ```
 
-You are now most likely met with the following error message
+You are potentially met with the following error message when doing this
 
 > error: constructing secrets manager of type "passphrase": unable to find either `PULUMI_CONFIG_PASSPHRASE` or `PULUMI_CONFIG_PASSPHRASE_FILE` when trying to access the Passphrase Secrets Provider; please ensure one of these environment variables is set to allow the operation to continue
 
-And the easiest way to get around this, is to do what it says and set the `PULUMI_CONFIG_PASSPHRASE` environment variable. 
+If that is the case, the easiest way to get around this, is to do what it says and set the `PULUMI_CONFIG_PASSPHRASE` environment variable.  
 
 If you are using PowerShell you do that by executing
 
@@ -499,13 +507,13 @@ If you are using PowerShell you do that by executing
 > $env:PULUMI_CONFIG_PASSPHRASE = "<YOUR PASSPHRASE>"
 ```
 
-Now re run 
+And then re-run 
 
 ```bash
 > pulumi config set appServicePlanSize F1
 ```
 
-After this command has been run, your yaml file should include a new __appServicePlanSize__ configuration
+After this command has been run, your YAML file should include a new __appServicePlanSize__ configuration
 
  ```yaml
 encryptionsalt: v1:6XEI+gHtvAA=:v1:gMkU1KqRnYa71DOn:RIB07x/onWgMj3A+ZXt6fLrdjceB1Q==
@@ -515,7 +523,7 @@ config:
   azure-native:location: westeurope
 ```
 
-__Note:__ Using the CLI offers some interesting benefits. For example, you can add the `--secret` parameter to the `pulumi config set` command. This encrypts the config value in the yaml file, allowing you to store secrets inside the configuration. This is also why you need the passphrase every time Pulumi needs to read the config file.
+__Note:__ Using the CLI offers some interesting benefits. For example, you can add the `--secret` parameter to the `pulumi config set` command. This encrypts the config value in the YAML file, allowing you to store secrets inside the configuration. This is also why you need the passphrase every time Pulumi needs to read the config file.
 
 With the config in place, you can update the resources in the __index.ts__ file to use them instead of the hard-coded values. However, to get hold of the configuration, you need to create an instance of `pulumi.Config()`. This instance can then be used to retrieve config values as needed
 
@@ -563,15 +571,15 @@ Just to verify that nothing has really changed, as you have only refactored the 
 
 The output from this should say that there are no changes.
 
-## Storing and accessing secrets with Azure KeyVault
+## Storing and accessing secrets with Azure Key Vault
 
-Before you set up the SQL Server resources, you are going to create an Azure KeyVault to store sensitive information. In this case it will store a single one secret that will be used by the application.
+Before you set up the SQL Server resources, you are going to create an Azure Key Vault to store sensitive information. In this case it will store a single one secret that will be used by the application.
 
-Once again, it is just a matter of instantiating a new resource. In this case a `azure.keyvault.Vault`. The KeyVault resource needs the following resources to be set
+Once again, it is just a matter of instantiating a new resource. In this case a `azure.keyvault.Vault`. The Key Vault resource needs the following resources to be set
 
 * logical name - `getName("kv")`
 * `resourceGroupName` - the `name` of the __resourceGroup__ resource
-* `properties` - an object containing the KeyVault configuration
+* `properties` - an object containing the Key Vault configuration
 
 ```typescript
 const kv = new azure.keyvault.Vault(getName("kv"), {
@@ -610,7 +618,7 @@ const kv = new azure.keyvault.Vault(getName("kv"), {
 
 __Note:__ You can find more information about the `Vault` type at: https://www.pulumi.com/docs/reference/pkg/azure-native/keyvault/vault/
 
-It would also be nice if the logical hierarchy, also applies to the KeyVault so it is logically placed under the resource group, when shown. To fix this, you can just set the `parent` property to the resource group
+It would also be nice if the logical hierarchy, also applies to the Key Vault, so it is logically placed under the resource group, when shown. To fix this, you can just set the `parent` property to the resource group
 
 ```typescript
 const kv = new azure.keyvault.Vault(getName("kv"), {
@@ -620,9 +628,9 @@ const kv = new azure.keyvault.Vault(getName("kv"), {
 })
 ```
 
-With the KeyVault in place, you can turn your focus towards adding the KeyVault secret that the application needs. 
+With the Key Vault in place, you can turn your focus towards adding the Key Vault secret that the application needs. 
 
-To create a new KeyVault Secret, you need to create an instance of `azure.keyvault.Secret`. This type needs the following configuration to work
+To create a new Key Vault Secret, you need to create an instance of `azure.keyvault.Secret`. This type needs the following configuration to work
 
 * logical name - "testSecret"
 * `secretName` - as we can't have Pulumi suffix the name, this also needs to be set to "testSecret"
@@ -647,7 +655,7 @@ new azure.keyvault.Secret("testSecret", {
 
 __Note:__ You can find more information about the `Secret` type at: https://www.pulumi.com/docs/reference/pkg/azure-native/keyvault/secret/
 
-Once again the logical hierarchy, is missing. And once again, it is easily fixed by setting the `parent` property to the KeyVault
+Once again the logical hierarchy, is missing. And once again, it is easily fixed by setting the `parent` property to the Key Vault
 
 ```typescript
 new azure.keyvault.Secret("testSecret", {
@@ -657,7 +665,7 @@ new azure.keyvault.Secret("testSecret", {
 })
 ```
 
-Now that you have the KeyVault and secret in place, you can try deploying the infrastructure again by running
+Now that you have the Key Vault and secret in place, you can try deploying the infrastructure again by running
 
 ```bash
 > pulumi up
@@ -671,9 +679,9 @@ Unfortunately, this fails with the error
 
 The error is technically correct, but it doesn't explain what the problem is. 
 
-The reason for the failure is that there is no access policy defined for the KeyVault, that gives the current user (you) permission to manipulate the secrets in the vault. 
+The reason for the failure is that there is no access policy defined for the Key Vault, that gives the current user (you) permission to manipulate the secrets in the vault. 
 
-To solve this, you need to add a KeyVault access policy that gives the current user permission to manipulate the KeyVault secrets.
+To solve this, you need to add a Key Vault access policy that gives the current user permission to manipulate the Key Vault secrets.
 
 This is done by setting the `accessPolicies` property of the `properties` object to an array containing the access policies you want. 
 
@@ -717,7 +725,7 @@ const kv = new azure.keyvault.Vault(getName("kv"), {
 
 __Note:__ Don't forget the magic of `Ctrl + Space`
 
-The permissions value should contain all the permissions to assign. in this case, as mentioned before, you need to assign permissions to secrets, which is done like this
+The permissions value should contain all the permissions to assign. In this case, as mentioned before, you need to assign permissions to secrets, which is done like this
 
 ```typescript
 const kv = new azure.keyvault.Vault(getName("kv"), {
@@ -741,11 +749,11 @@ const kv = new azure.keyvault.Vault(getName("kv"), {
 })
 ```
 
-This allows the current user to access the KeyVault, however, that is only useful during deployment. When the app is running, the access will be done by the web app's system assigned managed identity. Because of this, you also need to add an access policy that allows the web app to read the secrets in the KeyVault. This is done by adding a second entry in the `accessPolicy` list. In this case, the `tenantId` and `objectId` should be set to the web app's system assigned managed identity, which is available through the `identity` property on the __app__ constant.
+This allows the current user to access the Key Vault. However, that is only useful during deployment. When the app is running, the access will be done by the web app's system assigned managed identity. Because of this, you also need to add an access policy that allows the web app to read the secrets in the Key Vault. This is done by adding a second entry in the `accessPolicy` list. In this case, the `tenantId` and `objectId` should be set to the web app's system assigned managed identity, which is available through the `identity` property on the __app__ constant.
 
 In this case, the required permissions are "get" and "list" for secrets.
 
-The problem with this is that the `identity` property won't be assigned until the resource has actually been created. Because of this, this property is defined as a `pulumi.Output<ManagedServiceIdentityResponse|undefined>`, which is Pulumi's way of handling async properties. To get a value from an `pulumi.Output<T>` instance, you can use the `apply()` method. This takes a callback that defines what property to read and returns another `pulumi.Output<T>`. Pulumi can then figure out that this is async, and act accordingly.
+The problem with this is that the `identity` property won't be assigned until the resource has actually been created. Because of this, this property is defined as a `pulumi.Output<ManagedServiceIdentityResponse|undefined>`, which is Pulumi's way of handling async properties. To get a value from a `pulumi.Output<T>` instance, you can use the `apply()` method. This takes a callback that defines what property to read and returns another `pulumi.Output<T>`. Pulumi can then figure out that this is async, and act accordingly.
 
 It looks like this
 
@@ -771,11 +779,11 @@ const kv = new azure.keyvault.Vault(getName("kv"), {
 })
 ```
 
-__Note:__ The `x!` is there because the x is defined as `ManagedServiceIdentityResponse|undefined`. `undefined` is not valid for the properties that are being assigned, so by adding an `!`, you are telling TypeScript that you know that the x variable _does_ have a value.
+__Note:__ The `x!` is there because the x is defined as `ManagedServiceIdentityResponse|undefined`. `undefined` is not valid for the properties that are being assigned, so by adding a `!`, you are telling TypeScript that you know that the x variable _does_ have a value.
 
-With the KeyVault and the correct permissions in place, you also need to tell the web app the name of the KeyVault so it knows where to look for it. For this, the app expects an app setting called __KeyVaultName__ to contain the name of the KeyVault.
+With the Key Vault and the correct permissions in place, you also need to tell the web app the name of the Key Vault, so it knows where to look for it. For this, the app expects an app setting called __KeyVaultName__ to contain the name of the Key Vault.
 
-Unfortunately, with the current configuration, it is impossible to reference the KeyVault during the configuration of the web app, as it has yet to be defined. And moving it so that it is defined before the app will cause problems with the KeyVault configuration since that references the app. A classic case of a cyclic dependency. Instead, the solution is to break out the app settings from the wep app resource, and set it using a separate `azure.web.WebAppApplicationSettings` resource.
+Unfortunately, with the current configuration, it is impossible to reference the Key Vault during the configuration of the web app, as it has yet to be defined. And moving it so that it is defined before the app will cause problems with the Key Vault configuration since that references the app. A classic case of a cyclic dependency. Instead, the solution is to break out the app settings from the wep app resource, and set it using a separate `azure.web.WebAppApplicationSettings` resource.
 
 The `azure.web.WebAppApplicationSettings` needs the following settings defined
 
@@ -823,6 +831,7 @@ Now, you can try deploying the infrastructure again using
 ```bash
 > pulumi up
 ```
+
 Once that is done, you can try to refresh the web app in the browser to verify that it can successfully read the secret from the vault now.
 
 ![image](./images/website-2.png)
@@ -914,7 +923,7 @@ const db = new azure.sql.Database(getName("db"), {
 });
 ```
 
-Now you have the web app and the database defined, but you still need to make sure that the web app can talk to the database. This requires three things, a connection string for the web app to use, the necessary permissions for the the web app's assigned identity to access the database, and that the firewall to the SQL Server is opened to allow traffic to access it. Let's start with the connection string. 
+Now you have the web app and the database defined, but you still need to make sure that the web app can talk to the database. This requires three things, a connection string for the web app to use, the necessary permissions for the web app's assigned identity to access the database, and that the firewall to the SQL Server is opened to allow traffic to access it. Let's start with the connection string. 
 
 The first part, adding a connection string setting to the web app, is normally done by setting the `connectionStrings` property of the web app's `siteConfig` value. Unfortunately, trying to reference the SQL Server in the web app configuration would cause a cyclic dependency situation. Because of this, you will have to use a separate resource for this, just like you did with the app settings. In this case the type is `azure.web.WebAppConnectionStrings`. 
 
@@ -945,13 +954,13 @@ new azure.web.WebAppConnectionStrings("ConnectionStrings", {
 
 In this case, you are setting up a connection string called __infradb__, setting the type to `azure.types.enums.web.ConnectionStringType.SQLAzure` (or "SQLAzure" if you prefer that), and the `value` to the connection string to the database.
 
-However, the actual connection string is worth having a look at. It uses this weird syntax  ``pulumi.interpolate `Data Source=tcp:${sqlServer.name}...``. The reason for this is that the __sqlServer.name__ is an async `Output<string>`. This means that you can't just concatenate it with a string. Instead, you can use this syntax where you use the built in TypeScript string interpolation using backticks, but prefixing it with `pulumi.interpolate` to have Pulumi do the magic.
+However, the actual connection string is worth having a look at. It uses this weird syntax ``pulumi.interpolate `Data Source=tcp:${sqlServer.name}...``. The reason for this is that the __sqlServer.name__ is an async `Output<string>`. This means that you can't just concatenate it with a string. Instead, you can use this syntax where you use the built-in TypeScript string interpolation using backticks, but prefixing it with `pulumi.interpolate` to have Pulumi do the magic.
 
 __Note:__ You could also use the `apply()` function like this ``sqlServer.name.apply(x => `Data Source=tcp:${x}.database.windows.net,1433;Initial Catalog=infradb;Authentication=Active Directory Interactive;`)``
 
 The second part is to give the web app's assigned identity access to the database. In this case, you will do this by making it the Active Directory admin of the Azure SQL Server.
 
-__Warning:__ It is not recommended to make an apps managed identity the SQL Server admin as it will give full access to the entire server. However, for the sake of simplicity, this is what you will be doing in this lab. In a real world scenario you should create and use a less privileged SQL Server user for the identity.
+__Warning:__ It is not recommended making an app's managed identity the SQL Server admin as it will give full access to the entire server. However, for the sake of simplicity, this is what you will be doing in this lab. In a real world scenario you should create and use a less privileged SQL Server user for the identity.
 
 To set the SQL Server's Azure AD administrator, you need to set the `administrators`property on the SQL Server resource. The `administrators` property is defined as an object that requires the following properties to be set
 
@@ -970,7 +979,7 @@ const sqlServer = new azure.sql.Server(getName("sql"), {
 }, ...);
 ```
 
-The last part to making this work, is to open the SQL Server firewall for incoming traffic. In this case, you will configure it to allow traffic from all Azure based IP addresses. For this, you need to create an `azure.sql.FirewallRule` instance. It requires you to set 4 properties
+The last part to make this work, is to open the SQL Server firewall for incoming traffic. In this case, you will configure it to allow traffic from all Azure based IP addresses. For this, you need to create an `azure.sql.FirewallRule` instance. It requires you to set 5 properties
 
 * logical name - "AllowAllWindowsAzureIps"
 * `firewallRuleName` - "AllowAllWindowsAzureIps" (to skip Pulumi's auto-naming)
@@ -1023,23 +1032,15 @@ const laws = new azure.operationalinsights.Workspace(getName("laws"), {
 
 __Note:__ If you want to know what other configuration you can do to the workspace, have a look at: https://www.pulumi.com/docs/reference/pkg/azure-native/operationalinsights/workspace/
 
-With the storage in place, you can go ahead and add the Application Insights resource. Unfortunately the `@pulumi/azure-native` package doesn't yet have support for Workspace-based Application Insights. However, there is an older Azure Pulumi package called `@pulumi/azure` that has a type called `appinsights.Insights` that does support this. And luckily, there is no problem combining these two packages in the same project.
+With the storage in place, you can go ahead and add the Application Insights resource. Unfortunately the default imports from the `@pulumi/azure-native` package doesn't support Workspace-based Application Insights. However, Pulumi is dynamically built based on the Azure API, so there is definitely support for it. However, it is a bit hidden. 
 
-Go ahead and add the `@pulumi/azure` package using __npm__
-
-```bash
-> npm install @pulumi/azure
-```
-
-With this package in place, you can go ahead and import it as `az` at the top of the __index.ts__ file
+To get hold of a newer version of the Application Insights resource, you need to manually tell Pulumi which API version you want to use. And you do this by importing a specific API version like this
 
 ```typescript
-...
-import * as az from "@pulumi/azure";
-...
+import * as insights from '@pulumi/azure-native/insights/v20200202';
 ```
 
-Next, you can go ahead and create a the Application. This requires you to instantiate an instance of `az.appinsights.Insights`, using the following properties
+With that import in place, you can go ahead and create the Application Insights resource. This requires you to instantiate an instance of `insights.Component`, using the following properties
 
 * logical name - `getName("ai")`
 * `resourceGroupName` - the name of the resource group
@@ -1050,16 +1051,17 @@ Next, you can go ahead and create a the Application. This requires you to instan
 Turning the instantiation into this
 
 ```typescript
-const ai = new az.appinsights.Insights(getName("ai"), {
+const ai = new insights.Component(getName("ai"), {
     resourceGroupName: resourceGroup.name,
-    workspaceId: laws.id,
-    applicationType: "web"
+    workspaceResourceId: laws.id,
+    applicationType: "web",
+    kind: "web"
 }, {
     parent: app
-});
+})
 ```
 
-__Note:__ The full spec for this resource is available at: https://www.pulumi.com/docs/reference/pkg/azure/appinsights/insights/
+__Note:__ The full spec for this resource is available at: https://www.pulumi.com/registry/packages/azure-native/api-docs/insights/component/
 
 The final step in the addition of the Application Insights monitoring is to connect the web app to the Log Analytics resource. This is done by setting some "well-known" app settings for the web app. And these are 
 
@@ -1068,7 +1070,7 @@ The final step in the addition of the Application Insights monitoring is to conn
 * ApplicationInsightsAgent_EXTENSION_VERSION - should be `~3` for Linux-based servers, and `~2` for Windows-based ones. So `~3` for this lab
 * XDT_MicrosoftApplicationInsights_Mode - should be `recommended` for recommended settings
 
-However, before we add these app settings to the `azure.web.WebAppApplicationSettings` instance, you need to make sure you move it to the end of the file. Or at least move it after the `az.appinsights.Insights` instantiation.
+However, before we add these app settings to the `azure.web.WebAppApplicationSettings` instance, you need to make sure you move it to the end of the file. Or at least move it after the `insights.Component` instantiation.
 
 Once that is done, you can add the settings like this
 
@@ -1110,9 +1112,9 @@ However, since you want to export the web app's `defaultHostName` property, whic
 export const websiteAddress = pulumi.interpolate `https://${app.defaultHostName}/`;
 ```
 
-Once you have added the exported value, you can re.deploy the infrastructure to get the output added to the Pulumi state.
+Once you have added the exported value, you can re-deploy the infrastructure to get the output added to the Pulumi state.
 
-When the re-deploy is completed, you can read the value by executing
+When the re-deployment is completed, you can read the value by executing
 
 ```bash
 > pulumi stack output websiteAddress
@@ -1145,7 +1147,7 @@ The first step to creating a `WebApp` resource is to create a new TypeScript fil
 ```typescript
 import * as pulumi from "@pulumi/pulumi";
 import * as azure from "@pulumi/azure-native";
-import * as az from "@pulumi/azure";
+import * as insights from '@pulumi/azure-native/insights/v20200202';
 ```
 
 Next, you need to define, and export the type you are needing. In this case the type should be called __WebAppWithApplicationInsights__, and inherit from `pulumi.ComponentResource`. Like this
@@ -1164,7 +1166,7 @@ export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
 }
 ```
 
-The base class also has a constructor that should be called using the `super()` method. It accepts a "type name" that identifies this specific type, the name of the current instance, a set of args and a `pulumi.ComponentResourceOptions`. For the current resource, it could be called like this
+The base class also has a constructor that should be called using the `super()` method. It accepts a "type name" that identifies this specific type, the name of the current instance, a set of arguments and a `pulumi.ComponentResourceOptions`. For the current resource, it could be called like this
 
 ```typescript
 export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
@@ -1262,19 +1264,20 @@ export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
 
 __Note:__ The `parent` is also updated to being this resource
 
-The next resource you need to move is the `az.appinsights.Insights`. So go ahead and simply move that from __index.ts__ into the constructor of the `WebAppWithApplicationInsights` class.
+The next resource you need to move is the `insights.Component`. So go ahead and simply move that from __index.ts__ into the constructor of the `WebAppWithApplicationInsights` class.
 
 ```typescript
 export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
     constructor(name: string, props: WebAppWithApplicationInsightsProps, opts?: pulumi.ComponentResourceOptions) {
         ...
-        const ai = new az.appinsights.Insights(getName("ai"), {
+        const ai = new insights.Component(getName("ai"), {
             resourceGroupName: resourceGroup.name,
-            workspaceId: laws.id,
-            applicationType: "web"
+            workspaceResourceId: laws.id,
+            applicationType: "web",
+            kind: "web"
         }, {
             parent: app
-        });
+        })
     }
 }
 ```
@@ -1295,9 +1298,9 @@ The configuration of the Application Insights resource can then be updated as fo
 export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
     constructor(name: string, props: WebAppWithApplicationInsightsProps, opts?: pulumi.ComponentResourceOptions) {
         ...
-        const ai = new az.appinsights.Insights(props.aiName, {
+        const ai = new insights.Component(props.aiName, {
             resourceGroupName: props.resourceGroupName,
-            workspaceId: props.workspaceId,
+            workspaceResourceId: props.workspaceId,
             ...
         }, ...);
     }
@@ -1343,7 +1346,7 @@ export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
 }
 ```
 
-And yes, once again you are getting red squigglies. This time it is because it can't find the SQL Server name, and the KeyVault name. However, trying to add them to the interface will just cause even more problems with circular dependencies. Instead, go ahead and remove the offending lines for now, turning the declarations into the following
+And yes, once again you are getting red squigglies. This time it is because it can't find the SQL Server name, and the Key Vault name. However, trying to add them to the interface will just cause even more problems with circular dependencies. Instead, go ahead and remove the offending lines for now, turning the declarations into the following
 
 ```typescript
 export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
@@ -1396,8 +1399,7 @@ const app = new WebAppWithApplicationInsights(getName("web-app"), {
     appServicePlanId: appSvcPlan.id,
     isFreeTier: isFreeTier,
     aiName: getName("ai"),
-    workspaceId: laws.id,
-
+    workspaceId: laws.id
 }, {
     parent: appSvcPlan
 })
@@ -1435,7 +1437,7 @@ const laws = new azure.operationalinsights.Workspace(getName("laws"), {
 const webApp = ...;
 ```
 
-There are still a few problems left though. All of them caused by the type change on the __app__ constant. For example, the KeyVault tries to create an access policy by using the following code
+There are still a few problems left though. All of them caused by the type change on the __app__ constant. For example, the Key Vault tries to create an access policy by using the following code
 
 ```typescript
 {
@@ -1483,7 +1485,7 @@ export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
 
 That should solve all the outstanding issues with the move to a separate `ComponentResource` type. Unfortunately the __KeyVaultName__ app setting, and the connection string are now missing as they were removed. The solution to this is to add them back in some way that doesn't cause circular dependencies. Luckily, Pulumi is using TypeScript, so we can just add a couple of functions on the `WebAppWithApplicationInsights` that allows us to set these values when we have them.
 
-Start by breaking out the the connection strings and app settings into private members in the class
+Start by breaking out the connection strings and app settings into private members in the class
 
 ```typescript
 export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
@@ -1562,7 +1564,7 @@ Previewing update (dev):
  +   │  │  └─ PulumiLab:class:WebAppWithApplicationInsights     pulumilab-web-app-       create
  +   │  │     └─ azure-native:web:WebApp                        pulumilab-web-           create
  +   │  │        ├─ azure-native:web:WebAppConnectionStrings    ConnectionStrings        create
- +   │  │        ├─ azure:appinsights:Insights                  pulumilab-ai-            create
+ +   │  │        ├─ azure-native:insights/v20200202:Component   pulumilab-ai-            create
  +   │  │        └─ azure-native:web:WebAppApplicationSettings  AppSettings              create
  +   │  ├─ azure-native:sql:Server                              pulumilab-sql-           create
  +   │  │  ├─ azure-native:sql:Database                         pulumilab-db-            create

@@ -1,6 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as azure from "@pulumi/azure-native";
-import * as az from "@pulumi/azure";
+import * as insights from '@pulumi/azure-native/insights/v20200202';
 
 export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
     public identity: pulumi.Output<azure.types.output.web.ManagedServiceIdentityResponse | undefined>;
@@ -30,10 +30,11 @@ export class WebAppWithApplicationInsights extends pulumi.ComponentResource {
         this.name = app.name;
         this.defaultHostName = app.defaultHostName;
 
-        const ai = new az.appinsights.Insights(props.aiName, {
+        const ai = new insights.Component(props.aiName, {
             resourceGroupName: props.resourceGroupName,
-            workspaceId: props.workspaceId,
-            applicationType: "web"
+            workspaceResourceId: props.workspaceId,
+            applicationType: "web",
+            kind: "web"
         }, {
             parent: app
         });
