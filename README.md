@@ -25,5 +25,6 @@ Here are the links to each lab:
 
 * [Bicep lab](labs/bicep.md)
 * [Terraform lab](labs/terraform.md)
-* [Pulumi lab](labs/pulumi.md)
+* [Pulumi lab - C#](labs/pulumi-csharp.md)
+* _[Pulumi lab - TypeScript](labs/pulumi-typescript.md)_
 * [CI/CD Lab with Bicep and GitHub actions](labs/github-bicep.md)
