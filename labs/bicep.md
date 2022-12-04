@@ -321,7 +321,7 @@ The key vault resource, including the secret, should now look something like thi
 ```bicep
 resource keyVault 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: location
 
   properties: {
     tenantId: subscription().tenantId
@@ -440,7 +440,7 @@ resource sqlServer 'Microsoft.Sql/servers@2014-04-01' ={
 
   resource sqlServerDatabase 'databases@2014-04-01' = {
     name: sqlDbName
-    location: resourceGroup().location
+    location: location
     properties: {
       edition: 'Basic'
     }
@@ -591,7 +591,7 @@ Both resources should now look like this:
 ```bicep
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10-01' = {
   name: 'logAnalytics'
-  location: resourceGroup().location
+  location: location
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -601,7 +601,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10
 
 resource appInsightsComponents 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: 'appInsights'
-  location: resourceGroup().location
+  location: location
   kind: 'web'
   tags: {
     'hidden-link:${webApplication.id}': 'Resource'
@@ -885,7 +885,7 @@ Run the deployment. You will get an error, stating that the secrets can't be ret
 ```bicep
 resource keyVault 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: location
   properties: {
     tenantId: subscription().tenantId
     enabledForTemplateDeployment:true
