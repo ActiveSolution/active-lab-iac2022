@@ -73,6 +73,8 @@ Make the following changes to the resource:
 
 * Change location to 'resourceGroup().location'
 
+* Change the *sku.name* property to 'B1'
+
 * Add a *kind* property and give ut the value 'linux'
 
 * Add a *properties* section to the app service plan resource, and add a property called *reserved* with the value true.
@@ -84,7 +86,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
   location: resourceGroup().location
   kind: 'linux'
   sku: {
-    name: 'F1'
+    name: 'B1'
     capacity: 1
   }
   properties:{
@@ -94,6 +96,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
 ```
 
 > **Note**
+> 
 > You will probably see a warning which states that the location should be passed in as a parameter. We will fix this later in the lab
 
 **Create the App Service**  
@@ -105,7 +108,8 @@ Add this to the top of the file.
 var webAppName = 'webapp${uniqueString(resourceGroup().id)}'
 ```
 > **Note**
-> uniqueString will generate a deterministic hash string based on the input. This means that it will return the same output value every time, if we call it with the same input value. In this case we pass the id of the our resource group. Since that will not change over the lifetime of the resource group, we will get the same name for the app service every time. Read more about the uniqueString template functiom here: https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/template-functions-string#uniquestring
+> 
+> uniqueString() will generate a deterministic hash string based on the input. This means that it will return the same output value every time, if we call it with the same input value. In this case we pass the id of the our resource group. Since that will not change over the lifetime of the resource group, we will get the same name for the app service every time. Read more about the uniqueString template functiom here: https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/template-functions-string#uniquestring
 
 Now, create the app service by using the snippets again by typing *res-web-app* and hit ENTER.
 
@@ -145,7 +149,7 @@ Now, create the app service by using the snippets again by typing *res-web-app* 
 Your webApplication resource should now look something like this:
 
 ```bicep
-resource webApplication 'Microsoft.Web/sites@2018-11-01' = {
+resource webApplication 'Microsoft.Web/sites@2021-01-15' = {
   name: webAppName
   location: resourceGroup().location
   identity: {
@@ -203,7 +207,9 @@ Locate your web app and copy the URL shown in the *DefaultHostName* column (\*\*
 
 Open a web browser and browse to the URL that you just copied. 
 
-  > **Note**: It will take some time before the application loads the first time, since it needs to pull the container image.
+  > **Note**
+  >
+  > It will take some time before the application loads the first time, since it needs to pull the container image.
 
 When it loads, you should see a message that the Azure KeyVault is missing. This makes sense, since we haven't created it yet :-)  But it means that the app service is running properly, and that it has pulled the container image using the supplied credentials.
 
@@ -211,7 +217,7 @@ When it loads, you should see a message that the Azure KeyVault is missing. This
 ## Parameterize template
 Instead of hardcoding various values in the template, we can extract them into parameters that will be passed at deploy time. This allows us to for example deploy the same template into multiple environments (dev, test, prod) with different configuration in each environment. 
 
-To start with, we want to be able to specify which service plan (SKU) to use for our app service plan (instead of hardcoding F1 like we do now). This is likely something that will change depending on which environment that you are deploying the app service into, so it makes a lot of sens to parameterize this.
+To start with, we want to be able to specify which service plan (SKU) to use for our app service plan (instead of hardcoding B1 like we do now). This is likely something that will change depending on which environment that you are deploying the app service into, so it makes a lot of sens to parameterize this.
 
 Add a new parameter at the top of the file:
 
@@ -247,7 +253,9 @@ Add a new file called *template.parameters.json* to the same folder as the templ
         "appServicePlanSku": {
             "value": "F1"
         },
-        "location": "westeurope"
+        "location": {
+            "value": "westeurope"
+        }
     }
 }
 ```
@@ -259,7 +267,9 @@ az deployment group create --resource-group <myResourceGroupName> --template-fil
 ```
 The deployment should complete successfully without making any changes.
 
-> **Note**: The values for the parameters will in a production scenario typically be supplied from within a deployment pipeline, such as Azure Pipelines or Github Actions.
+> **Note**
+>
+> The values for the parameters will in a production scenario typically be supplied from within a deployment pipeline, such as Azure Pipelines or Github Actions.
 
 ## Storing and accessing secrets with Azure Keyvault
 Azure Key Vault is a managed service for storing sensitive information, such as secrets, keys and certificates. In this lab, we'll access the key vault from the web application and read a secret value from it.
@@ -273,14 +283,18 @@ First, add a variable in the template.bicep file that will generate a unique nam
 var keyVaultName = 'keyvault${uniqueString(resourceGroup().id)}'
 ```
 
-* Then use the snippet again by typing in the template.bicept file *res-keyvault* and hit ENTER to create the resource for the azure keyvault.
+* Then create the keyvault resource by writing *res-keyvault* in the template.bicep file and hit ENTER
   
 * Use the variable to assign the name to the vault.
   ```bicep
   resource keyVault 'Microsoft.KeyVault/vaults@2019-09-01' = {
     name: keyVaultName
   ```
-* Remove everything except name, location, tenantId and the sku properties. Change the tenantId property to reference the tenantId property of the current subscription (which you can access through the subscription() function)
+* Remove everything except name, location, tenantId and the sku properties.
+
+* Change **location** to use the location parameter
+
+* Modify the **tenantId** property to reference the tenantId property of the current subscription (which you can access through the subscription() function)
   
 ```bicep
 tenantId: subscription().tenantId
@@ -296,16 +310,16 @@ In addition, we'll add a secret to the key vault. The demo application will read
   
 * Add the secret resource, use the snippet by typing *res-keyvault-secret* and hit ENTER.
   
-* Cut and paste the new *keyVault_testSecret* resource into the *keyVault* resource.
+* Move the new *keyVault_testSecret* resource definition into the *keyVault* resource, rightat the end before the closing curly bracket.
   
-* Strip the *Microsoft.Keyvault/vaults* prefix. This is not needed since the resource is now nested.
+* Strip the *Microsoft.Keyvault/vaults* prefix. This is not needed since the resource is now nested inside the keyvault resource.
   
 * Name the secret 'testSecret' and give it any value.
 
 The key vault resource, including the secret, should now look something like this:
 
 ```bicep
-resource keyVault 'Microsoft.KeyVault/vaults@2021-04-01-preview' = {
+resource keyVault 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
   location: resourceGroup().location
 
@@ -318,7 +332,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-04-01-preview' = {
     }
   }
 
-  resource keyVault_testSecret 'secrets@2021-04-01-preview' = {
+  resource keyVault_testSecret 'secrets@2019-09-01' = {
     name: 'testSecret'
     properties: {
       value: 'hello from bicep'
@@ -348,7 +362,7 @@ Save the file, and run the deployment command again to create the key vault.
 az deployment group create --resource-group <myResourceGroupName> --template-file template.bicep --parameters "@template.parameters.json"
 ```
 
-Go back to the web page (****.azurewebsites.net) and refresh the page. Unfortunately, the web application will still report the same error. This is because we haven't given the identity of the app service access to the key vault. This is done by adding an access policy.
+Go back to the web page (****.azurewebsites.net) and refresh the page. Unfortunately, the web application will not work properly. This is because we haven't given the identity of the app service access to the key vault. This can be solved by adding an access policy.
 
 Modify the *accessPolicies* section in the *keyVault* resource to look like this:
 
@@ -372,7 +386,9 @@ This will create an access policy for the identity of the app service, and give 
 Redeploy the template again using the same command as before, and then refresh the web page. The error message about the keyvault is missing should now be gone.
 However, it now complains that a connection string to the SQL database is missing.
   
-**Note** You might have to restart the web app in order to make it re-read the setting from key vault. You can do that from the portal or through the CLI like this:
+> **Note**
+>
+> You might have to restart the web app in order to make it re-read the setting from key vault. You can do that from the portal or through the CLI like this:
   
 ```
 az webapp restart -g <resourceGroup> -n <webApp>
@@ -391,14 +407,19 @@ var sqlAdministratorLogin = 'infraadmin'
 var sqlAdministratorPassword = 'P${uniqueString(resourceGroup().id, '224F5A8B-51DB-46A3-A7C8-59B0DD584A41')}x!'
 
 ```
-> **Note**: Generating a password like this is not recommended, and only done for the purpose of this lab. There is an optional step at the end of this lab that shows how you can refer to secrets in a key vault from within a bicep template.
+> **Note**
+>
+>  Generating a password like this is not recommended, and only done for the purpose of this lab. 
+>  There is an optional step at the end of this lab that shows how you can refer to secrets in a key vault from within a bicep template.
 
 To add the two snippets for an Azure SQL Server resource and an Azure SQL database resource, type *res-sql* and hit ENTER.
   
-* cut and paste the *sqlServerDatabase* resource into the *sqlServer* resource.
+* Move the *sqlServerDatabase* resource definition into the *sqlServer* resource, at the end right before the closing curly bracket.
   
 * Remove the parent property and the *Microsoft.Sql/servers/* prefix.
-  
+
+* Set **location** to use the location parameter
+
 * Remove all properties for the database except edition property.
   
 * In the *sqlServer* resource add a new properties object with the properties *administratorLogin* and *administratorLoginPassword*.
@@ -410,7 +431,7 @@ To add the two snippets for an Azure SQL Server resource and an Azure SQL databa
 ```bicep
 resource sqlServer 'Microsoft.Sql/servers@2014-04-01' ={
   name: sqlServerName
-  location: resourceGroup().location
+  location: location
 
   properties:{
     administratorLogin: sqlAdministratorLogin
@@ -459,7 +480,9 @@ Next up, we will set the managed identity of the app service as the active direc
  }
 ```
 
-> **Note**: Setting the app service identity as the AAD admin for the SQL Server is obviously not a best practice, but is done here for simplicity.
+> **Note**
+>
+>  Setting the app service identity as the AAD admin for the SQL Server is obviously not a best practice, but is done here for simplicity.
 
 Finally, to make sure that the traffic between the app service and the database is allowed through, we need to add a firewall rule to the SQL Server resource that allows all traffic coming from within Azure:
 
@@ -478,7 +501,7 @@ The whole sqlServer resource should now look like this:
 ```bicep
 resource sqlServer 'Microsoft.Sql/servers@2014-04-01' = {
   name: sqlServerName
-  location: resourceGroup().location
+  location: location
   properties:{
     administratorLogin: sqlAdministratorLogin
     administratorLoginPassword: sqlAdministratorPassword
@@ -486,7 +509,7 @@ resource sqlServer 'Microsoft.Sql/servers@2014-04-01' = {
 
   resource sqlServerDatabase 'databases@2014-04-01' = {
     name: sqlDbName
-    location: resourceGroup().location
+    location: location
     properties: {
       edition: 'Basic'
     }
@@ -514,14 +537,15 @@ resource sqlServer 'Microsoft.Sql/servers@2014-04-01' = {
 
 Redeploy the template, and then refresh the web application. The error about the missing connection string should now be gone. But now it complains that is lacks settings for Application Insights. Man, what a grumpy application! Let's add some more resources then.
   
-> **Note**: 
-  If you want to see all the resources that you have created so far, you can either browse to the resource group in the Azure portal, or you can run the following command:
-
-  ```bat
-  az resource list --resource-group <myResourceGroup> -o table
-  ```
-  
-This will list all resources within the resource group, and should show you the app service, app service plan, the Azure key vault, Azure SQL Server and the Azure SQL Database. 
+> **Note**
+>
+>  If you want to see all the resources that you have created so far, you can either browse to the resource group in the Azure portal, or you can run the following command:
+>
+>  ```bat
+>  az resource list --resource-group <myResourceGroup> -o table
+>  ```
+>  
+> This will list all resources within the resource group, and should show you the app service, app service plan, the Azure key vault, Azure SQL Server and the Azure SQL Database. 
 
 
 ## Add Application Insights
@@ -635,7 +659,9 @@ resource webAppSettings 'Microsoft.Web/sites/config@2021-01-15' = {
 }
 ```
 
-  > **Note**: Remember to change XXXXXXXXXXXX to the same docker registry password tht you used before.
+> **Note**
+>
+> Remember to change XXXXXXXXXXXX to the same docker registry password tht you used before.
   
 Remove all of the app settings from the appSettings section in the webApplication resource.
 Redeploy the template and refresh the web page. It should now show that your entire infrastructure is configured correctly.
@@ -657,7 +683,9 @@ Run the deployement again. When it has finished, you can access the output by us
 az deployment group show --name template --resource-group <resourceGroupName> --query properties.outputs.websiteAddress.value
 ```
 
-> **Note**: The name *template* is used since we haven't given the deployment a specific name. The default name is set to the name of the bicep template file (e.g. template)
+> **Note**
+>
+> The name *template* is used since we haven't given the deployment a specific name. The default name is set to the name of the bicep template file (e.g. template)
 
 
 # Optional excercises
@@ -676,6 +704,7 @@ In Bicep, you can use *modules* to split up a deployment template in multiple pa
 To make it a usable module, the template that uses it must be able to pass in the required information as parameters, and then reference the output of this module. So we need to add parameters for the information that the app service and app insights resource needs, and then we will return the generated app service as an output property. Add the following parameters at the top of the webapp.bicep file:
 
 ```bicep
+param location string
 param appServicePlanId string
 param keyVaultName string
 param sqlServerFQDN string
@@ -720,6 +749,7 @@ output webApplicationDefaultHostName string = webApplication.properties.defaultH
 module webModule 'webapp.bicep' = {
   name: 'webAppDeploy'
   params: {
+    location: location
     appServicePlanId:appServicePlan.id
     keyVaultName:keyVaultName
     sqlDbName:sqlDbName
@@ -775,13 +805,13 @@ To add the SQL secrets to the key vault, we must first give ourself access to th
 First, retrieve the object ID for your user, by running:
 
 ```bat
-az ad user show --id <youremail>
+az ad user show --id <youremail> --query id --out tsv
 ```
 
 Grab the KeyVault name and the id:
 
 ```bat
-az keyvault list
+az keyvault list -o table
 ```
 
 **TIP**: Save the KeyVault id, you will need it further down in the lab. 
@@ -799,7 +829,9 @@ az keyvault secret set --vault-name <keyVaultName> --name sqlAdminLogin --value 
 az keyvault secret set --vault-name <keyVaultName> --name sqlAdminPassword --value <yourSecurePassword>
 ```
 
-  >**NOTE**: You need to set a complex password or the deployment will fail later in the lab.
+>**NOTE**
+>
+> You need to set a complex password or the deployment will fail later in the lab.
 
 To use these values, we can now reference the secrets directly from the parameters file.
 
@@ -813,13 +845,13 @@ param sqlAdministratorLogin string
 param sqlAdministratorPassword string
 ```
 
-* Then add the following parameters to your template.parameters.json file, replacing \<subscriptionId\>, \<resourceGroupName\> and \<keyVaultName\> with your values:
+* Then add the following parameters to your template.parameters.json file, replacing SUBSCRIPTIONID, RESOURCEGROUPNAME and KEYVAULTNAME with your values:
 
 ```bicep
   "sqlAdministratorLogin": {
      "reference": {
          "keyVault": {
-             "id": "/subscriptions/<subscriptionId>/resourceGroups/<resourceGroupName>/providers/Microsoft.KeyVault/vaults/<keyVaultName>"
+             "id": "/subscriptions/SUBSCRIPTIONID/resourceGroups/RESOURCEGROUPNAME/providers/Microsoft.KeyVault/vaults/KEYVAULTNAME"
          },
          "secretName": "sqlAdminLogin"
      }
@@ -827,7 +859,7 @@ param sqlAdministratorPassword string
  "sqlAdministratorPassword": {
      "reference": {
          "keyVault": {
-             "id": "/subscriptions/<subscriptionId>/resourceGroups/<resourceGroupName>/providers/Microsoft.KeyVault/vaults/<keyVaultName>"
+             "id": "/subscriptions/SUBSCRIPTIONID/resourceGroups/RESOURCEGROUPNAME/providers/Microsoft.KeyVault/vaults/KEYVAULTNAME"
          },
          "secretName": "sqlAdminPassword"
      }
