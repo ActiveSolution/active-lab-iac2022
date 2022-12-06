@@ -156,7 +156,7 @@ For this particular resource type, you need to configure the `name` and `locatio
 
 ```
 resource "azurerm_resource_group" "rg" {
-  name     = "TerraformLab"
+  name     = "terraformlab"
   location = "westeurope"
 }
 ```
@@ -326,7 +326,7 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "rg" {
-  name     = "TerraformLab"
+  name     = "terraformlab"
   location = "westeurope"
 }
 
@@ -530,7 +530,7 @@ __Note:__ Calling it __terraform.tfvars__ is a convention that means that you do
 To set the desired values in the `.tfvars` file, just add the following
 
 ```
-project_name = "TerraformLab"
+project_name = "terraformlab"
 app_service_plan_sku = "F1"
 ```
 
@@ -538,7 +538,7 @@ __Note:__ The extension will help you with this as well. Just press the trusty `
 
 During deployment, you can then define the file manually by using the `-var-file="terraform.tfvars"`, or just depend on the naming convention.
 
-You can also set the variables by using the `-var` parameter like this `terraform apply -var="project_name=TerraformLab"`. Or use a combination the two.
+You can also set the variables by using the `-var` parameter like this `terraform apply -var="project_name=terraformlab"`. Or use a combination the two.
 
 Verify that the deployment works by running
 
