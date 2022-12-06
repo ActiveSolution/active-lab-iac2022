@@ -105,3 +105,6 @@ Change the deployment to be subscription scoped
     ```
 3. Set the targetScope of the subscription module deployment to resourcegroup:
     > scope: bicepDemoRG
+
+4. Deploy using the `az deployment sub create` command:
+   > az deployment sub create  -f .\main.bicep -l westeurope -p location=westeurope storageAccountPrefix=jakob
