@@ -24,22 +24,23 @@ This is the "documentation" for the Bicep demo performed during the IaC workshop
 
 6. Delete, and create a storage account resource using snippet `res-storage` 
    - Give a unique name
-   - Set location to resourceGroup().location
+   - Set location to `westeurope`
    - Show IntelliSense on individual properties, such as `kind`
-7. Add a parameter for the location parameter
-    > `param string location`
 
 8. Create a resource group 
    > `az group create -n bicepdemo -l westeurope`
 9. Run a whatif deployment
-    > az deployment group what-if -g bicepdemo -f .\main.bicep -p location=westeurope
+    > az deployment group what-if -g bicepdemo -f .\main.bicep
 10. Run the deployment:
-    > az deployment group create -g bicepdemo -f .\main.bicep -p location=westeurope
+    > az deployment group create -g bicepdemo -f .\main.bicep
 11. Show deployment list
     > az deployment group list -g bicepdemo -o table
 12. Show deployment details
     > az deployment group show -n storage -g bicepdemo
 13. Show deployment in Azure portal
+
+7. Add a parameter for the location parameter
+    > `param string location`
 
 14. Create a parameter + variable for generating the storage account name
     ``` 
@@ -49,6 +50,7 @@ This is the "documentation" for the Bicep demo performed during the IaC workshop
     ```
 15. Deploy again with the new parameter
     >  az deployment group create -g bicepdemo -f .\main.bicep -p location=westeurope storageAccountPrefix=jakob
+    
 16. Validate parameter by adding min/max
     > @minLength(3)  
     > @maxLength(11)  
