@@ -26,30 +26,30 @@ This is the "documentation" for the Terraform demo performed during the IaC work
 5. Add a Terraform configuration block
     - Snippet: tf_az_config
 
-6. Add a new resource group resource
+6. Initialize Terraform
+    - `terraform init`
+
+7. Add a new resource group resource
     - `resource "azurerm_resource_group" "rg" { }`
 
-7. Set the name and location of the resource group
+8. Set the name and location of the resource group
     - `name = "MyTerraformDemo"`
     - `location = "WestEurope"`
 
-8. Add a storage account resource
+9. Add a storage account resource
     - `resource "resource "azurerm_storage_account" "my" { }"`
 
-9. Set the name, resource group name, location, tier and replication type of the account
+10. Set the name, resource group name, location, tier and replication type of the account
     - `name = "tfdemostorage123"`
     - `resource_group_name = azurerm_resource_group.rg.name`
     - `location = azurerm_resource_group.rg.location`
     - `account_tier = "Standard"`
     - `account_replication_type = "LRS"`
 
-10. Format the document by pressing `Shift + Alt + f`
+11. Format the document by pressing `Shift + Alt + f`
     - Warning: This can decide to remove a `{` from the `terraform` block
 
-11. Open terminal (`Ctrl + ö`)
-
-12. Initialize Terraform
-    - terraform init
+12. Open terminal (`Ctrl + ö`)
 
 13. Verify the plan
     - terraform plan
@@ -60,7 +60,7 @@ This is the "documentation" for the Terraform demo performed during the IaC work
 
 15. Open Azure Portal and show the created resources
 
-16. Change Replication to GRS under Configuration
+16. Disable "Secure transfer required" under Configuration and save
 
 17. Apply Terraform again to show the change being reverted
     - terraform apply
