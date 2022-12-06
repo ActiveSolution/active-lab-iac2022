@@ -50,6 +50,9 @@ This is the "documentation" for the Bicep demo performed during the IaC workshop
     ```
 15. Deploy again with the new parameter
     >  az deployment group create -g bicepdemo -f .\main.bicep -p location=westeurope storageAccountPrefix=jakob
+
+16. Run a deployment in complete mode to show that old storage account is removed
+    > az deployment group create -g bicepdemo -f .\main.bicep -p location=westeurope storageAccountPrefix=jakob --mode complete
     
 16. Validate parameter by adding min/max
     > @minLength(3)  
