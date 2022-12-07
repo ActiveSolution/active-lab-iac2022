@@ -21,7 +21,7 @@ This is the "documentation" for the Pulumi demo performed during the IaC worksho
 3. Show available Pulumi project types
     - pulumi new
 
-4. Select __azure-typescript__
+4. Select __azure-csharp__
     - project name: `Enter`
     - project description: `Enter`
     - stack name: `Enter`
@@ -32,35 +32,31 @@ This is the "documentation" for the Pulumi demo performed during the IaC worksho
     - `code .`
 
 6. Show contents of project
-    - package.json
     - Pulumi.yaml and Pulumi.dev.yaml
 
-7. Open __index.ts__
+7. Open __Program.cs__
 
-8. Remove everything but the imports
+8. Remove all existing resources
 
-9. Update imports, removing storage and changing `resources` to azure
-    - Code: `import * as azure from "@pulumi/azure-native";`
+9. Create a new instance of `AzureNative.Resources.ResourceGroup`
+    - Code: `var rg = new ResourceGroup("MyPulumiDemo");`
 
-10. Create a new instance of `azure.resources.ResourceGroup`
-    - Code: `const rg = new azure.resources.ResourceGroup("MyPulumiDemo");`
+10. Explain location being picked up from stack configuration
 
-11. Explain location being picked up from stack configuration
+11. Create a storage account resource
+    - Code: `new StorageAccount("pulumidemo");`
 
-12. Create a storage account resource
-    - Code: `new azure.storage.StorageAccount("pulumidemo");`
+12. Show red squiggly complaining about `args` missing
 
-13. Show red squiggly complaining about `args` missing
+13. Add `args` parameter
+        new() {}
 
-14. Add `args` parameter
+15. Explain some `args` properties having to be set
 
-15. Show red squiggly complaining about `args` missing `kind`, `resourceGroupName`, `sku`
-
-16. Set the name, resource group name, king and sku and replication type of the account
-    - `resourceGroupName: rg.name,`
-    - `kind: azure.storage.Kind.StorageV2,`
-    - `account_tier = "Standard"`
-    - `sku: { name: azure.storage.SkuName.Standard_LRS }`
+16. Set the resource group name, kind and Sku and replication type of the account
+    - `ResourceGroupName` = `rg.Name`
+    - `Kind` = `Kind.StorageV2`
+    - `Sku` = `new SkuArgs { Name = SkuName.Standard_LRS }`
 
 17. Open terminal (`Ctrl + ö`)
 
@@ -72,19 +68,17 @@ This is the "documentation" for the Pulumi demo performed during the IaC worksho
 19. Open Azure Portal and show the created resources
     - Explain the weird naming
 
-20. Change Replication to GRS under Configuration
+20. Disable "Secure transfer required" under Configuration and save
 
-21. Deploy Pulumi stack again 
-    - Explain error
-
-22. Set PULUMI_CONFIG_PASSPHRASE environment variable
-    - `$env:PULUMI_CONFIG_PASSPHRASE="Test123!"`
-
-23. Deploy Pulumi stack again to show the change not being caught
+21. Deploy Pulumi stack again to show the change not being caught
     - pulumi up
     - No
 
-24. Tear down the infrastructure
+22. Deploy Pulumi stack again with --refresh to show Pulumi picking up change
+    - pulumi up --refresh
+    - No
+
+23. Tear down the infrastructure
     - pulumi destroy -y
 
-19. Open Azure Portal and show that the resources have been removed
+24. Open Azure Portal and show that the resources have been removed
