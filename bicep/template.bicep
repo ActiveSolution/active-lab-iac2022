@@ -73,7 +73,7 @@ resource webAppSettings 'Microsoft.Web/sites/config@2021-01-15' = {
 }
 
 
-resource sqlServer 'Microsoft.Sql/servers@2021-02-01-preview' ={
+resource sqlServer 'Microsoft.Sql/servers@2014-04-01' ={
   name: sqlServerName
   location: location
 
@@ -82,7 +82,7 @@ resource sqlServer 'Microsoft.Sql/servers@2021-02-01-preview' ={
     administratorLoginPassword: sqlAdministratorPassword
   }
 
-  resource sqlServerDatabase 'databases@2021-02-01-preview' = {
+  resource sqlServerDatabase 'databases@2014-04-01' = {
     name: sqlDbName
     location: location
     properties: {
