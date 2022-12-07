@@ -593,10 +593,10 @@ Once again, it is just a matter of instantiating a new resource. In this case an
 * `ResourceGroupName` - the `Name` of the __resourceGroup__ resource
 * `Properties` - an instance of `Pulumi.AzureNative.KeyVault.Inputs.VaultPropertiesArgs`
 
-```typescript
-const kv = new azure.keyvault.Vault(getName("kv"), {
-    resourceGroupName: resourceGroup.name,
-    properties: {
+```csharp
+var kv = new Vault(getName("kv"), new() {
+    ResourceGroupName = resourceGroup.name,
+    Properties = new VaultPropertiesArgs {
         
     }
 })
