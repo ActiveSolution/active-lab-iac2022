@@ -368,7 +368,7 @@ return await Pulumi.Deployment.RunAsync(() =>
                 },
                 new NameValuePairArgs { 
                     Name = "DOCKER_REGISTRY_SERVER_PASSWORD", 
-                    Value = "JtA75wA31qqzawrPyOiC/bSr6y5whHIC" 
+                    Value = "XXXXXX" 
                 }
             },
             AlwaysOn = false,
